@@ -152,6 +152,7 @@ export interface ThemeSettings {
   family_invitation_text?: string;
   auspicious_welcome?: string;
   compliments_from?: string;
+  show_audio_controls?: boolean;
 }
 
 export interface InvitationData {

@@ -14,7 +14,7 @@ import { AudioController } from './components/AudioController';
 import { AdminPanel } from './components/AdminPanel';
 import { weddingApi, DEFAULT_DEMO_INVITATION } from './services/api';
 import type { InvitationData } from './types/wedding';
-import { Shield, Menu, X, Users, Calendar, MapPin, Heart, Image } from 'lucide-react';
+import { Menu, X, Users, Calendar, MapPin, Heart, Image } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export const App: React.FC = () => {
@@ -114,11 +114,12 @@ export const App: React.FC = () => {
         <OpeningEnvelopeIntro invitation={invitation} onOpen={handleOpenInvitation} />
       )}
 
-      {/* Floating Audio Controller */}
+      {/* Floating Audio Controller (Configurable from Admin Panel) */}
       <AudioController
         audioUrl={invitation.audio_url}
         audioTitle={invitation.audio_title}
         autoPlayTrigger={audioAutoplayTrigger}
+        showWidget={invitation.theme_settings?.show_audio_controls !== false}
       />
 
       {/* Top Floating Mini Header */}
@@ -279,12 +280,16 @@ export const App: React.FC = () => {
 
       {/* Main Guest Journey Flow */}
       <main className="relative z-10 pt-14 sm:pt-16">
-        {/* Cinematic Hero Header with Ganesha Blessing & Couple Picture */}
+        {/* Cinematic Hero Header with Ganesha Blessing (Secret Admin Gateway on tap) & Couple Picture */}
         <CinematicHero
           invitation={invitation}
           onExploreProfiles={() => scrollToSection('profile-section')}
           onViewEvents={() => scrollToSection('events-section')}
           onRsvp={() => scrollToSection('rsvp-section')}
+          onOpenAdmin={() => {
+            window.location.hash = 'admin';
+            setIsAdminView(true);
+          }}
         />
 
         {/* Bride & Groom Detailed Profile & Qualifications Section (Bride First) */}
@@ -314,21 +319,6 @@ export const App: React.FC = () => {
           onRevisitInvitation={handleRevisitInvitation}
         />
       </main>
-
-      {/* Discreet Admin Portal Link at bottom-left */}
-      <div className="fixed bottom-5 left-5 z-40">
-        <button
-          onClick={() => {
-            window.location.hash = 'admin';
-            setIsAdminView(true);
-          }}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#180E1C]/80 border border-[#D7B46A]/30 text-[#D7B46A]/80 hover:text-[#D7B46A] hover:bg-[#180E1C] backdrop-blur-md text-[11px] tracking-wider uppercase font-mono shadow-lg transition-all cursor-pointer"
-          title="Open Administrator Portal"
-        >
-          <Shield className="w-3 h-3 text-[#D7B46A]" />
-          <span className="hidden sm:inline">Admin Portal</span>
-        </button>
-      </div>
     </div>
   );
 };

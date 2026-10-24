@@ -15,6 +15,7 @@ export const OpeningEnvelopeIntro: React.FC<OpeningEnvelopeIntroProps> = ({
 }) => {
   const [isOpenAnimationTriggered, setIsOpenAnimationTriggered] = useState(false);
   const [sealCracked, setSealCracked] = useState(false);
+  const ganeshImage = invitation.theme_settings?.ganesh_image_url || '/images/ganesh_ji.jpg';
 
   const handleOpen = () => {
     if (isOpenAnimationTriggered) return;
@@ -178,29 +179,28 @@ export const OpeningEnvelopeIntro: React.FC<OpeningEnvelopeIntroProps> = ({
               />
             </motion.div>
 
-            {/* Ornate Turmeric Gold Wax Seal */}
+            {/* Ornate Turmeric Gold Wax Seal with Lord Ganesha Sacred Portrait */}
             <div className="absolute top-[48%] left-1/2 -translate-x-1/2 -translate-y-1/2 z-40">
               <motion.button
                 onClick={handleOpen}
                 disabled={isOpenAnimationTriggered}
-                whileHover={{ scale: 1.08 }}
+                whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.94 }}
-                className={`w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center cursor-pointer transition-shadow ${
+                className={`w-16 h-16 sm:w-20 sm:h-20 rounded-full p-1 flex items-center justify-center cursor-pointer transition-shadow ${
                   sealCracked ? 'opacity-0 scale-150 duration-500' : 'wax-seal-glow'
                 }`}
                 style={{
                   background: 'radial-gradient(circle, #FEF08A 0%, #FACC15 50%, #EAB308 75%, #CA8A04 100%)',
-                  boxShadow: '0 4px 25px rgba(234, 179, 8, 0.6), inset 0 0 12px rgba(254, 240, 138, 0.9)',
+                  boxShadow: '0 4px 28px rgba(234, 179, 8, 0.7), inset 0 0 14px rgba(254, 240, 138, 0.95)',
                 }}
-                aria-label="Crack royal wax seal and open invitation"
+                aria-label="Crack royal wax seal with Lord Ganesha blessings and open invitation"
               >
-                <div className="w-[82%] h-[82%] rounded-full border-2 border-dashed border-[#713F12]/60 flex flex-col items-center justify-center text-[#713F12]">
-                  <span className="font-title text-xs sm:text-sm font-bold tracking-tighter">
-                    S&A
-                  </span>
-                  <span className="text-[7px] uppercase tracking-widest font-mono font-bold">
-                    शुभ मुहर
-                  </span>
+                <div className="w-full h-full rounded-full border-2 border-[#CA8A04] overflow-hidden p-0.5 bg-white shadow-inner flex items-center justify-center">
+                  <img
+                    src={ganeshImage}
+                    alt="Lord Ganesha - Auspicious Wedding Blessing Seal"
+                    className="w-full h-full rounded-full object-cover"
+                  />
                 </div>
               </motion.button>
             </div>

@@ -20,6 +20,7 @@ import {
   Eye,
   Upload,
   Music,
+  Volume2,
   Play,
   Pause,
   Disc,
@@ -1714,6 +1715,40 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onBackToGuestView }) => 
                     </button>
                   </div>
                 </div>
+              </div>
+
+              {/* Show / Hide Floating Music Control Button on Wedding Site */}
+              <div className="flex items-center justify-between p-3.5 rounded-xl bg-[#120A14] border border-[#D7B46A]/30">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-[#3D0B14] border border-[#D7B46A]/40 flex items-center justify-center text-[#F3E5AB] shrink-0">
+                    <Volume2 className="w-4 h-4 text-[#D7B46A]" />
+                  </div>
+                  <div>
+                    <label htmlFor="show_audio_controls_toggle" className="text-xs font-bold text-[#F5ECDD] block cursor-pointer">
+                      Show Music Control Button on Website (फ्लोटिंग म्यूजिक बटन)
+                    </label>
+                    <span className="text-[11px] text-[#D7B46A]/75 block">
+                      Enable or disable the floating play/pause music controller for guests on the live invitation site
+                    </span>
+                  </div>
+                </div>
+
+                <label className="relative inline-flex items-center cursor-pointer shrink-0 ml-4">
+                  <input
+                    type="checkbox"
+                    id="show_audio_controls_toggle"
+                    checked={invitationForm.theme_settings?.show_audio_controls !== false}
+                    onChange={(e) => {
+                      const updated = {
+                        ...(invitationForm.theme_settings || {}),
+                        show_audio_controls: e.target.checked,
+                      };
+                      setInvitationForm({ ...invitationForm, theme_settings: updated });
+                    }}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-[#251020] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-[#FEF08A] after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-[#EAB308] peer-checked:to-[#CA8A04] border border-[#D7B46A]/40"></div>
+                </label>
               </div>
             </div>
 

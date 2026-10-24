@@ -8,6 +8,7 @@ interface CinematicHeroProps {
   onExploreProfiles?: () => void;
   onViewEvents: () => void;
   onRsvp?: () => void;
+  onOpenAdmin?: () => void;
 }
 
 interface TimeLeft {
@@ -23,6 +24,7 @@ export const CinematicHero: React.FC<CinematicHeroProps> = ({
   onExploreProfiles,
   onViewEvents,
   onRsvp,
+  onOpenAdmin,
 }) => {
   const [timeLeft, setTimeLeft] = useState<TimeLeft>({
     days: 0,
@@ -88,17 +90,27 @@ export const CinematicHero: React.FC<CinematicHeroProps> = ({
         transition={{ duration: 0.9, ease: 'easeOut' }}
         className="relative z-20 flex flex-col items-center pt-2 max-w-xl mx-auto"
       >
-        {/* Auspicious Lord Ganesha Medallion */}
-        <div className="relative mb-2 sm:mb-3 group">
+        {/* Auspicious Lord Ganesha Medallion (Secret Admin Portal Gateway on Click/Tap) */}
+        <button
+          type="button"
+          onClick={() => {
+            if (onOpenAdmin) {
+              onOpenAdmin();
+            }
+          }}
+          className="relative mb-2 sm:mb-3 group cursor-pointer focus:outline-none rounded-full"
+          title="॥ श्री गणेशाय नमः ॥"
+          aria-label="Lord Ganesha Invocatory Blessing"
+        >
           <div className="absolute -inset-1.5 sm:-inset-2 rounded-full bg-gradient-to-r from-[#FDE047]/60 via-[#F59E0B]/50 to-[#CA8A04]/60 blur-md group-hover:blur-lg transition-all" />
-          <div className="relative w-16 h-16 sm:w-24 sm:h-24 rounded-full p-1 bg-gradient-to-b from-[#FEF08A] via-[#EAB308] to-[#CA8A04] shadow-[0_4px_25px_rgba(234,179,8,0.35)]">
+          <div className="relative w-16 h-16 sm:w-24 sm:h-24 rounded-full p-1 bg-gradient-to-b from-[#FEF08A] via-[#EAB308] to-[#CA8A04] shadow-[0_4px_25px_rgba(234,179,8,0.35)] group-hover:scale-105 active:scale-95 transition-transform duration-300">
             <img
               src={ganeshImage}
               alt="Lord Ganesha - Auspicious Wedding Blessings"
               className="w-full h-full rounded-full object-cover"
             />
           </div>
-        </div>
+        </button>
 
         {/* Shloka & Auspicious Invocation Text */}
         <h2 className="font-hindi text-lg sm:text-2xl text-[#713F12] tracking-widest font-bold drop-shadow-sm">
