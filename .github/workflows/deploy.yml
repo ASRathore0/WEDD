@@ -89,7 +89,7 @@ jobs:
             fi
 
             # Ensure storage directories and permissions
-            mkdir -p storage/app/public/hero storage/app/public/gallery bootstrap/cache
+            mkdir -p storage/app/public/hero storage/app/public/couples storage/app/public/gallery bootstrap/cache
             chmod -R 777 storage bootstrap/cache 2>/dev/null || true
 
             # Create native Linux symlink for storage (bypasses PHP exec limitation on shared hosting)

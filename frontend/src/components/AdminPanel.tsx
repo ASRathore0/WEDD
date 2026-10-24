@@ -18,6 +18,7 @@ import {
   AlertTriangle,
   Loader2,
   Eye,
+  Upload,
 } from 'lucide-react';
 import { weddingApi } from '../services/api';
 import type {
@@ -135,6 +136,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onBackToGuestView }) => 
   const [heroFile, setHeroFile] = useState<File | null>(null);
   const [isUploadingHero, setIsUploadingHero] = useState<boolean>(false);
   const [isUploadingGanesh, setIsUploadingGanesh] = useState<boolean>(false);
+  const [isUploadingBride, setIsUploadingBride] = useState<boolean>(false);
+  const [isUploadingGroom, setIsUploadingGroom] = useState<boolean>(false);
 
   // Helper updaters for Indian Wedding fields (Bride first, then Groom)
   const updateBrideField = (field: string, val: string) => {
@@ -286,6 +289,86 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onBackToGuestView }) => 
       showFeedback('error', 'Failed to upload Ganesha image.');
     } finally {
       setIsUploadingGanesh(false);
+    }
+  };
+
+  const handleBrideFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsUploadingBride(true);
+    try {
+      const formData = new FormData();
+      formData.append('bride_image_file', file);
+      formData.append('title', invitationForm.title || 'Shubh Vivah');
+      formData.append('partner_one', invitationForm.partner_one || 'Sweety Singh');
+      formData.append('partner_two', invitationForm.partner_two || 'Amit Kumar Singh');
+      formData.append(
+        'wedding_date',
+        invitationForm.wedding_date
+          ? new Date(invitationForm.wedding_date).toISOString().slice(0, 19).replace('T', ' ')
+          : '2026-11-30 19:00:00'
+      );
+      formData.append('wedding_timezone', invitationForm.wedding_timezone || 'Asia/Kolkata');
+      formData.append('venue_city', invitationForm.venue_city || 'Shiv Bajrang Hotel, Thawe');
+      formData.append('is_published', invitationForm.is_published ? '1' : '0');
+      if (invitationForm.tagline) formData.append('tagline', invitationForm.tagline);
+      if (invitationForm.theme_settings) {
+        formData.append('theme_settings', JSON.stringify(invitationForm.theme_settings));
+      }
+
+      const res = await weddingApi.updateAdminInvitation(formData);
+      if (res?.data?.theme_settings?.bride_details?.photo_url) {
+        setInvitationForm((prev) => ({
+          ...prev,
+          theme_settings: res.data.theme_settings,
+        }));
+        showFeedback('success', 'Bride photo uploaded and applied live!');
+      }
+      loadAllData();
+    } catch (err: any) {
+      showFeedback('error', 'Failed to upload Bride photo.');
+    } finally {
+      setIsUploadingBride(false);
+    }
+  };
+
+  const handleGroomFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsUploadingGroom(true);
+    try {
+      const formData = new FormData();
+      formData.append('groom_image_file', file);
+      formData.append('title', invitationForm.title || 'Shubh Vivah');
+      formData.append('partner_one', invitationForm.partner_one || 'Sweety Singh');
+      formData.append('partner_two', invitationForm.partner_two || 'Amit Kumar Singh');
+      formData.append(
+        'wedding_date',
+        invitationForm.wedding_date
+          ? new Date(invitationForm.wedding_date).toISOString().slice(0, 19).replace('T', ' ')
+          : '2026-11-30 19:00:00'
+      );
+      formData.append('wedding_timezone', invitationForm.wedding_timezone || 'Asia/Kolkata');
+      formData.append('venue_city', invitationForm.venue_city || 'Shiv Bajrang Hotel, Thawe');
+      formData.append('is_published', invitationForm.is_published ? '1' : '0');
+      if (invitationForm.tagline) formData.append('tagline', invitationForm.tagline);
+      if (invitationForm.theme_settings) {
+        formData.append('theme_settings', JSON.stringify(invitationForm.theme_settings));
+      }
+
+      const res = await weddingApi.updateAdminInvitation(formData);
+      if (res?.data?.theme_settings?.groom_details?.photo_url) {
+        setInvitationForm((prev) => ({
+          ...prev,
+          theme_settings: res.data.theme_settings,
+        }));
+        showFeedback('success', 'Groom photo uploaded and applied live!');
+      }
+      loadAllData();
+    } catch (err: any) {
+      showFeedback('error', 'Failed to upload Groom photo.');
+    } finally {
+      setIsUploadingGroom(false);
     }
   };
 
@@ -1027,6 +1110,63 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onBackToGuestView }) => 
                 </span>
               </div>
 
+              {/* Bride Photo Upload & Live Preview */}
+              <div className="p-3.5 sm:p-4 rounded-xl bg-[#120A14] border border-[#D7B46A]/30 flex flex-col sm:flex-row items-center gap-4">
+                <div className="relative w-20 h-20 rounded-xl overflow-hidden border-2 border-[#D7B46A] shadow-md bg-[#200A16] shrink-0 p-0.5">
+                  <img
+                    src={invitationForm.theme_settings?.bride_details?.photo_url || invitationForm.hero_image_url || '/images/amit_sweety_hero.jpg'}
+                    alt="Bride Preview"
+                    className="w-full h-full object-cover object-top rounded-lg"
+                  />
+                </div>
+                <div className="flex-1 w-full space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <label className="text-[11px] uppercase tracking-wider text-[#D7B46A] font-bold">
+                      Bride Profile Picture (वधू का फोटो)
+                    </label>
+                    <label className="cursor-pointer px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#D7B46A] to-[#B89648] text-[#1D060A] text-xs font-bold hover:brightness-110 transition-all flex items-center gap-1.5 shadow-sm">
+                      {isUploadingBride ? (
+                        <>
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          <span>Uploading...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="w-3.5 h-3.5" />
+                          <span>Upload Photo</span>
+                        </>
+                      )}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        disabled={isUploadingBride}
+                        onChange={handleBrideFileUpload}
+                      />
+                    </label>
+                  </div>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="Or paste image URL (e.g. /images/... or https://...)"
+                      value={invitationForm.theme_settings?.bride_details?.photo_url || ''}
+                      onChange={(e) => updateBrideField('photo_url', e.target.value)}
+                      className="flex-1 px-3 py-1.5 rounded-lg bg-[#1A0E1C] border border-[#D7B46A]/25 text-xs text-[#F5ECDD] focus:outline-none focus:border-[#D7B46A]"
+                    />
+                    {invitationForm.theme_settings?.bride_details?.photo_url && (
+                      <button
+                        type="button"
+                        onClick={() => updateBrideField('photo_url', '')}
+                        className="px-2.5 py-1.5 rounded-lg bg-[#3D0B14] text-[#F3E5AB] text-xs hover:bg-[#52101B] border border-[#D7B46A]/30 transition-all cursor-pointer"
+                        title="Reset to default hero picture"
+                      >
+                        Reset
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-[11px] uppercase tracking-wider text-[#D7B46A] mb-1 font-medium">
@@ -1137,6 +1277,63 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onBackToGuestView }) => 
                 <span className="px-3 py-0.5 rounded-full bg-[#3D0B14] border border-[#D7B46A]/50 text-[11px] text-[#F3E5AB]">
                   Groom (वर)
                 </span>
+              </div>
+
+              {/* Groom Photo Upload & Live Preview */}
+              <div className="p-3.5 sm:p-4 rounded-xl bg-[#120A14] border border-[#D7B46A]/30 flex flex-col sm:flex-row items-center gap-4">
+                <div className="relative w-20 h-20 rounded-xl overflow-hidden border-2 border-[#D7B46A] shadow-md bg-[#200A16] shrink-0 p-0.5">
+                  <img
+                    src={invitationForm.theme_settings?.groom_details?.photo_url || invitationForm.hero_image_url || '/images/amit_sweety_hero.jpg'}
+                    alt="Groom Preview"
+                    className="w-full h-full object-cover object-top rounded-lg"
+                  />
+                </div>
+                <div className="flex-1 w-full space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <label className="text-[11px] uppercase tracking-wider text-[#D7B46A] font-bold">
+                      Groom Profile Picture (वर का फोटो)
+                    </label>
+                    <label className="cursor-pointer px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#D7B46A] to-[#B89648] text-[#1D060A] text-xs font-bold hover:brightness-110 transition-all flex items-center gap-1.5 shadow-sm">
+                      {isUploadingGroom ? (
+                        <>
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          <span>Uploading...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="w-3.5 h-3.5" />
+                          <span>Upload Photo</span>
+                        </>
+                      )}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        disabled={isUploadingGroom}
+                        onChange={handleGroomFileUpload}
+                      />
+                    </label>
+                  </div>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="Or paste image URL (e.g. /images/... or https://...)"
+                      value={invitationForm.theme_settings?.groom_details?.photo_url || ''}
+                      onChange={(e) => updateGroomField('photo_url', e.target.value)}
+                      className="flex-1 px-3 py-1.5 rounded-lg bg-[#1A0E1C] border border-[#D7B46A]/25 text-xs text-[#F5ECDD] focus:outline-none focus:border-[#D7B46A]"
+                    />
+                    {invitationForm.theme_settings?.groom_details?.photo_url && (
+                      <button
+                        type="button"
+                        onClick={() => updateGroomField('photo_url', '')}
+                        className="px-2.5 py-1.5 rounded-lg bg-[#3D0B14] text-[#F3E5AB] text-xs hover:bg-[#52101B] border border-[#D7B46A]/30 transition-all cursor-pointer"
+                        title="Reset to default hero picture"
+                      >
+                        Reset
+                      </button>
+                    )}
+                  </div>
+                </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

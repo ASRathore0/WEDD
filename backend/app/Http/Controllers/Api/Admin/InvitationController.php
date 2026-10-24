@@ -55,6 +55,8 @@ class InvitationController extends Controller
             'theme_settings' => ['nullable', 'array'],
             'hero_image_file' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:15360'], // max 15MB
             'ganesh_image_file' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:10240'], // max 10MB
+            'bride_image_file' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:15360'], // max 15MB
+            'groom_image_file' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:15360'], // max 15MB
         ]);
 
         if ($request->hasFile('hero_image_file')) {
@@ -69,11 +71,31 @@ class InvitationController extends Controller
             $validated['theme_settings'] = $currentTheme;
         }
 
+        if ($request->hasFile('bride_image_file')) {
+            $path = $request->file('bride_image_file')->store('couples', 'public');
+            $currentTheme = $validated['theme_settings'] ?? ($invitation->theme_settings ?? []);
+            if (!isset($currentTheme['bride_details']) || !is_array($currentTheme['bride_details'])) {
+                $currentTheme['bride_details'] = [];
+            }
+            $currentTheme['bride_details']['photo_url'] = Storage::url($path);
+            $validated['theme_settings'] = $currentTheme;
+        }
+
+        if ($request->hasFile('groom_image_file')) {
+            $path = $request->file('groom_image_file')->store('couples', 'public');
+            $currentTheme = $validated['theme_settings'] ?? ($invitation->theme_settings ?? []);
+            if (!isset($currentTheme['groom_details']) || !is_array($currentTheme['groom_details'])) {
+                $currentTheme['groom_details'] = [];
+            }
+            $currentTheme['groom_details']['photo_url'] = Storage::url($path);
+            $validated['theme_settings'] = $currentTheme;
+        }
+
         $invitation->update($validated);
 
         return response()->json([
             'success' => true,
-            'message' => 'Invitation settings and hero image updated successfully.',
+            'message' => 'Invitation settings and images updated successfully.',
             'data' => $invitation,
         ]);
     }

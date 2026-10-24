@@ -401,7 +401,7 @@ export const RsvpSection: React.FC<RsvpSectionProps> = ({ invitation }) => {
                   ) : (
                     <>
                       <Send className="w-4 h-4 text-[#451A03]" />
-                      <span>Send RSVP Response (शुभकामनाएं भेजें)</span>
+                      <span>(शुभकामनाएं भेजें)</span>
                     </>
                   )}
                 </button>
