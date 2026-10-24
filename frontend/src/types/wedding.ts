@@ -135,6 +135,19 @@ export const DEFAULT_BRIDE_FAMILY: FamilyMember[] = [
   },
 ];
 
+export interface SectionVisibility {
+  envelope_intro?: boolean;
+  hero?: boolean;
+  couple_profiles?: boolean;
+  bride_family?: boolean;
+  events?: boolean;
+  venue_travel?: boolean;
+  rsvp?: boolean;
+  story?: boolean;
+  gallery?: boolean;
+  closing_scene?: boolean;
+}
+
 export interface ThemeSettings {
   primary_color?: string;
   secondary_color?: string;
@@ -153,6 +166,7 @@ export interface ThemeSettings {
   auspicious_welcome?: string;
   compliments_from?: string;
   show_audio_controls?: boolean;
+  section_visibility?: SectionVisibility;
 }
 
 export interface InvitationData {

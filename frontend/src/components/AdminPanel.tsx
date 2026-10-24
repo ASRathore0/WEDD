@@ -18,6 +18,9 @@ import {
   AlertTriangle,
   Loader2,
   Eye,
+  EyeOff,
+  Sliders,
+  Check,
   Upload,
   Music,
   Volume2,
@@ -33,6 +36,7 @@ import type {
   GalleryMediaData,
   VenueTravelData,
   FamilyMember,
+  SectionVisibility,
 } from '../types/wedding';
 import { DEFAULT_BRIDE_FAMILY } from './BrideFamilySection';
 
@@ -53,8 +57,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onBackToGuestView }) => 
 
   // Active Tab
   const [activeTab, setActiveTab] = useState<
-    'overview' | 'invitation' | 'bride_family' | 'events' | 'stories' | 'gallery' | 'venue' | 'rsvps'
+    'overview' | 'sections' | 'invitation' | 'bride_family' | 'events' | 'stories' | 'gallery' | 'venue' | 'rsvps'
   >('overview');
+
+  const [savingSections, setSavingSections] = useState<boolean>(false);
 
   // Data States
   const [feedbackMessage, setFeedbackMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -643,6 +649,194 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onBackToGuestView }) => 
     window.open('/api/admin/rsvps-export', '_blank');
   };
 
+  // Section Visibility Controls
+  const getSectionStatus = (key: keyof SectionVisibility): boolean => {
+    const vis = invitationForm.theme_settings?.section_visibility;
+    if (!vis) return true;
+    return vis[key] !== false;
+  };
+
+  const handleToggleSection = (key: keyof SectionVisibility) => {
+    const currentStatus = getSectionStatus(key);
+    const updatedStatus = !currentStatus;
+
+    setInvitationForm((prev) => {
+      const currentTheme = prev.theme_settings || {};
+      const currentVis = currentTheme.section_visibility || {};
+      return {
+        ...prev,
+        theme_settings: {
+          ...currentTheme,
+          section_visibility: {
+            ...currentVis,
+            [key]: updatedStatus,
+          },
+        },
+      };
+    });
+  };
+
+  const handleSaveSections = async (customVis?: SectionVisibility) => {
+    setSavingSections(true);
+    try {
+      const visToSave = customVis || invitationForm.theme_settings?.section_visibility || {};
+      const updatedTheme = {
+        ...(invitationForm.theme_settings || {}),
+        section_visibility: visToSave,
+      };
+      const payload = {
+        ...invitationForm,
+        theme_settings: updatedTheme,
+      };
+
+      await weddingApi.updateAdminInvitation(payload);
+      setInvitationForm(payload);
+      showFeedback('success', 'Section visibility settings saved successfully! (सेक्शन सेटिंग्स सुरक्षित हो गईं)');
+      loadAllData();
+    } catch (err: any) {
+      showFeedback('error', err.response?.data?.message || 'Failed to save section visibility.');
+    } finally {
+      setSavingSections(false);
+    }
+  };
+
+  const handleToggleAllSections = (enableAll: boolean) => {
+    const newVis: SectionVisibility = {
+      envelope_intro: enableAll,
+      hero: enableAll,
+      couple_profiles: enableAll,
+      bride_family: enableAll,
+      events: enableAll,
+      venue_travel: enableAll,
+      rsvp: enableAll,
+      story: enableAll,
+      gallery: enableAll,
+      closing_scene: enableAll,
+    };
+
+    setInvitationForm((prev) => ({
+      ...prev,
+      theme_settings: {
+        ...(prev.theme_settings || {}),
+        section_visibility: newVis,
+      },
+    }));
+
+    handleSaveSections(newVis);
+  };
+
+  const SECTION_CONTROLS: {
+    key: keyof SectionVisibility;
+    title: string;
+    hindiTitle: string;
+    category: string;
+    description: string;
+    hindiDesc: string;
+    icon: any;
+    navLabel: string;
+  }[] = [
+    {
+      key: 'envelope_intro',
+      title: '3D Opening Envelope & Wax Seal Intro',
+      hindiTitle: 'शाही 3D लिफाफा एवं मुहर (Ganesh Ji Seal)',
+      category: 'Welcome Screen (प्रवेश)',
+      description: 'Interactive 3D opening envelope intro with auspicious Ganesh Ji golden wax seal before entering.',
+      hindiDesc: 'वेबसाइट खुलते ही अतिथियों के स्वागत हेतु गणेश जी की शाही मुहर युक्त 3D लिफाफा। बंद करने पर सीधा मुख्य पेज दिखेगा।',
+      icon: Sparkles,
+      navLabel: 'Intro Screen',
+    },
+    {
+      key: 'hero',
+      title: 'Hero Banner & Muhurat Countdown',
+      hindiTitle: 'मुख्य बैनर, गणेश वंदना एवं मुहूर्त टाइमर',
+      category: 'Main Banner (शीर्ष भाग)',
+      description: 'Lord Ganesha invocation shloka, couple portrait, wedding date announcement, and live countdown timer.',
+      hindiDesc: 'श्री गणेशाय नमः श्लोक, वर-वधू का मुख्य शाही चित्र, विवाह तिथि और मुहूर्त का लाइव काउंटडाउन।',
+      icon: Sparkles,
+      navLabel: 'Top Header',
+    },
+    {
+      key: 'couple_profiles',
+      title: 'Bride & Groom Profiles (वधू - वर परिचय)',
+      hindiTitle: 'वधू एवं वर विस्तृत परिचय व योग्यता (Bride First)',
+      category: 'Couple Details (वर-वधू)',
+      description: 'Detailed bios, qualifications, profession, individual photos, and gotra of Sweety (वधू) & Amit (वर).',
+      hindiDesc: 'स्वीटी (वधू) एवं अमित (वर) का विस्तृत परिचय, शैक्षणिक योग्यता, कार्यक्षेत्र एवं व्यक्तिगत तस्वीरें।',
+      icon: Users,
+      navLabel: 'Bride & Groom',
+    },
+    {
+      key: 'bride_family',
+      title: "Bride's Family Members (वधू पक्ष परिवार)",
+      hindiTitle: 'वधू पक्ष परिवार एवं दर्शनाभिलाषी (सिंह परिवार)',
+      category: 'Singh Pariwar (परिवार)',
+      description: 'Parents, grandparents, paternal & maternal uncles/aunts, and welcoming kinsfolk of Singh Pariwar.',
+      hindiDesc: 'पूज्य माता-पिता, दादा-दादी, चाचा-चाची, मामा-मामी एवं समस्त दर्शनाभिलाषी स्वजनों की सूची।',
+      icon: Heart,
+      navLabel: "Bride's Family",
+    },
+    {
+      key: 'events',
+      title: 'Wedding Events & Ceremonies Timeline',
+      hindiTitle: 'शुभ विवाह कार्यक्रम एवं मांगलिक तिथियां',
+      category: 'Ceremonies (कार्यक्रम)',
+      description: 'Chronological timeline of ceremonies (Tilak, Haldi, Mehendi, Sangeet, Vivah Sanskar, Vidai).',
+      hindiDesc: 'तिलक, हल्दी, मेहंदी, संगीत, शुभ पाणिग्रहण संस्कार एवं विदाई के समय व स्थान का विवरण।',
+      icon: Calendar,
+      navLabel: 'Ceremonies',
+    },
+    {
+      key: 'venue_travel',
+      title: 'Venue, Map & Travel Logistics',
+      hindiTitle: 'विवाह स्थल एवं मार्ग दर्शन (Google Maps)',
+      category: 'Venue & Directions (स्थान)',
+      description: 'Palace / banquet hall details, address, Google Maps directions, and travel instructions for guests.',
+      hindiDesc: 'विवाह स्थल का नाम, पता, गूगल मैप्स दिशा-निर्देश एवं अतिथियों के लिए आवागमन की जानकारी।',
+      icon: MapPin,
+      navLabel: 'Venue & Travel',
+    },
+    {
+      key: 'rsvp',
+      title: 'RSVP & Guest Blessings Form',
+      hindiTitle: 'शुभकामनाएं एवं उपस्थिति (RSVP)',
+      category: 'Guest Interaction (अतिथि)',
+      description: 'Digital RSVP form allowing guests to confirm their attendance and submit heartfelt wishes & blessings.',
+      hindiDesc: 'अतिथियों द्वारा अपनी उपस्थिति दर्ज करने एवं वर-वधू को स्नेहिल आशीर्वाद/शुभकामनाएं भेजने का फॉर्म।',
+      icon: Heart,
+      navLabel: 'Send Blessings',
+    },
+    {
+      key: 'story',
+      title: 'Couple Love Story & Milestones',
+      hindiTitle: 'हमारी प्रेम कथा (Love Story Milestones)',
+      category: 'Memories (स्मृतियां)',
+      description: 'Romantic journey, how the couple met, the proposal, and meaningful milestones of their love story.',
+      hindiDesc: 'वर-वधू की पहली मुलाकात, परिणय सूत्र का प्रस्ताव और खूबसूरत स्मृतियों की प्रेम यात्रा।',
+      icon: Heart,
+      navLabel: 'Our Story',
+    },
+    {
+      key: 'gallery',
+      title: 'Royal Photo Gallery',
+      hindiTitle: 'शाही फोटो गैलरी (Pre-Wedding & Memories)',
+      category: 'Memories & Photos (गैलरी)',
+      description: 'Cinematic royal gallery showcasing pre-wedding shoots, engagement ceremonies, and celebration photos.',
+      hindiDesc: 'प्री-वेडिंग शूट, सगाई एवं यादगार लम्हों की भव्य शाही फोटो गैलरी।',
+      icon: ImageIcon,
+      navLabel: 'Royal Gallery',
+    },
+    {
+      key: 'closing_scene',
+      title: 'Auspicious Blessings & Farewell (पावन समापन)',
+      hindiTitle: 'पावन समापन, मंगलाचरण एवं शुभाशीष',
+      category: 'Closing (समापन)',
+      description: 'Final traditional blessings, invitation replay button, and copyright/credits.',
+      hindiDesc: 'अंतिम मंगल श्लोक, लिफाफे को पुनः देखने का विकल्प एवं सस्नेह विदाई संदेश।',
+      icon: Sparkles,
+      navLabel: 'Closing Scene',
+    },
+  ];
+
   // Filtered RSVPs
   const filteredRsvps = rsvpsList.filter((item) => {
     const matchesSearch =
@@ -808,6 +1002,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onBackToGuestView }) => 
         <div className="flex items-center gap-1 sm:gap-2 overflow-x-auto pb-3 mb-8 border-b border-white/10 no-scrollbar">
           {[
             { id: 'overview', label: 'Overview', icon: Sparkles },
+            { id: 'sections', label: 'Section On/Off (कंट्रोल)', icon: Sliders },
             { id: 'invitation', label: 'Invitation Details', icon: Heart },
             { id: 'bride_family', label: "Bride's Family (वधू पक्ष)", icon: Users },
             { id: 'events', label: 'Ceremonies', icon: Calendar },
@@ -980,6 +1175,232 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onBackToGuestView }) => 
                     )}
                   </tbody>
                 </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ------------------------------------------------------------- */}
+        {/* TAB: SECTION VISIBILITY CONTROLS (ON / OFF) */}
+        {/* ------------------------------------------------------------- */}
+        {activeTab === 'sections' && (
+          <div className="space-y-6 max-w-5xl">
+            {/* Header Banner */}
+            <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-[#220E24] via-[#1A0B1C] to-[#120714] border border-[#D7B46A]/40 shadow-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="px-3 py-0.5 rounded-full bg-[#D7B46A]/20 border border-[#D7B46A]/50 text-[#F3E5AB] font-mono text-[10px] tracking-widest uppercase">
+                    Live Section Switchboard
+                  </span>
+                  <span className="text-xs text-[#D7B46A]">卐</span>
+                </div>
+                <h2 className="font-title text-2xl sm:text-3xl font-bold text-[#F3E5AB]">
+                  Section Visibility Controls (सेक्शन ऑन/ऑफ)
+                </h2>
+                <p className="text-xs sm:text-sm text-[#F5ECDD]/80 mt-1 max-w-2xl leading-relaxed font-body">
+                  Toggle on or off every individual section of the wedding invitation in real time.
+                  When any section is turned <strong className="text-rose-400">OFF</strong>, both its content and its navigation link in the top bar and mobile drawer will be automatically hidden from guests.
+                </p>
+              </div>
+
+              {/* Quick Actions */}
+              <div className="flex flex-wrap items-center gap-2.5 shrink-0 w-full sm:w-auto">
+                <button
+                  type="button"
+                  onClick={() => handleToggleAllSections(true)}
+                  disabled={savingSections}
+                  className="flex-1 sm:flex-initial px-4 py-2.5 rounded-xl bg-emerald-950/60 hover:bg-emerald-900/80 border border-emerald-500/50 text-emerald-300 text-xs font-semibold tracking-wider uppercase transition-all cursor-pointer flex items-center justify-center gap-2 shadow-sm"
+                  title="Turn all 10 sections ON"
+                >
+                  <CheckCircle className="w-4 h-4 text-emerald-400" />
+                  <span>Turn All ON (सभी चालू)</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleToggleAllSections(false)}
+                  disabled={savingSections}
+                  className="flex-1 sm:flex-initial px-4 py-2.5 rounded-xl bg-rose-950/60 hover:bg-rose-900/80 border border-rose-500/50 text-rose-300 text-xs font-semibold tracking-wider uppercase transition-all cursor-pointer flex items-center justify-center gap-2 shadow-sm"
+                  title="Turn all 10 sections OFF"
+                >
+                  <EyeOff className="w-4 h-4 text-rose-400" />
+                  <span>Turn All OFF (सभी बंद)</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleSaveSections()}
+                  disabled={savingSections}
+                  className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#D7B46A] via-[#E5C378] to-[#CA9D48] text-[#331800] text-xs font-bold tracking-wider uppercase shadow-[0_4px_20px_rgba(215,180,106,0.35)] hover:shadow-[0_6px_25px_rgba(215,180,106,0.5)] transition-all cursor-pointer flex items-center justify-center gap-2"
+                >
+                  {savingSections ? (
+                    <Loader2 className="w-4 h-4 animate-spin text-[#331800]" />
+                  ) : (
+                    <Check className="w-4 h-4 text-[#331800]" />
+                  )}
+                  <span>Save Changes (सुरक्षित करें)</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Quick Stat Bar */}
+            <div className="flex items-center justify-between px-2 text-xs text-[#F5ECDD]/70">
+              <div className="flex items-center gap-2">
+                <Sliders className="w-3.5 h-3.5 text-[#D7B46A]" />
+                <span>Showing all 10 modular sections:</span>
+              </div>
+              <div className="font-mono text-[#D7B46A] font-bold">
+                {SECTION_CONTROLS.filter((s) => getSectionStatus(s.key)).length} of 10 Active
+              </div>
+            </div>
+
+            {/* Section Cards Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {SECTION_CONTROLS.map((sec, idx) => {
+                const Icon = sec.icon;
+                const isEnabled = getSectionStatus(sec.key);
+
+                return (
+                  <div
+                    key={sec.key}
+                    onClick={() => handleToggleSection(sec.key)}
+                    className={`group relative p-5 rounded-2xl border transition-all duration-200 cursor-pointer select-none flex flex-col justify-between ${
+                      isEnabled
+                        ? 'bg-gradient-to-br from-[#1C0F1E] to-[#140A16] border-[#D7B46A]/50 shadow-[0_4px_20px_rgba(0,0,0,0.3)] hover:border-[#D7B46A]'
+                        : 'bg-[#120814]/70 border-white/10 opacity-70 hover:opacity-90'
+                    }`}
+                  >
+                    <div>
+                      {/* Top Row: Category + Index + Live Badge + Switch */}
+                      <div className="flex items-center justify-between gap-3 mb-3">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-mono font-bold text-[#D7B46A] px-2 py-0.5 rounded-md bg-[#2D162B] border border-[#D7B46A]/30">
+                            #{idx + 1}
+                          </span>
+                          <span className="text-[10px] uppercase font-mono tracking-wider text-[#F5ECDD]/60">
+                            {sec.category}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-3">
+                          {/* Live Status Pill */}
+                          <span
+                            className={`px-2.5 py-0.5 rounded-full text-[10px] font-mono uppercase tracking-wider font-semibold border ${
+                              isEnabled
+                                ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                                : 'bg-zinc-800/80 text-zinc-400 border-zinc-700'
+                            }`}
+                          >
+                            {isEnabled ? '● Active (चालू)' : '○ Hidden (बंद)'}
+                          </span>
+
+                          {/* Custom Animated Toggle Switch */}
+                          <div
+                            className={`w-12 h-6 flex items-center rounded-full p-1 transition-colors duration-300 ${
+                              isEnabled
+                                ? 'bg-gradient-to-r from-emerald-600 to-emerald-500 justify-end'
+                                : 'bg-zinc-800 justify-start'
+                            }`}
+                          >
+                            <div
+                              className={`w-4 h-4 rounded-full bg-white shadow-md transform transition-transform duration-200 ${
+                                isEnabled ? 'scale-110' : 'scale-90'
+                              }`}
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Title & Icon */}
+                      <div className="flex items-start gap-3 mt-1">
+                        <div
+                          className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border transition-colors ${
+                            isEnabled
+                              ? 'bg-[#651B2B]/40 border-[#D7B46A] text-[#D7B46A]'
+                              : 'bg-zinc-900 border-zinc-700 text-zinc-500'
+                          }`}
+                        >
+                          <Icon className="w-5 h-5" />
+                        </div>
+
+                        <div className="flex-1 min-w-0">
+                          <h3
+                            className={`font-title text-base sm:text-lg font-semibold leading-snug ${
+                              isEnabled ? 'text-[#F3E5AB]' : 'text-[#F5ECDD]/60'
+                            }`}
+                          >
+                            {sec.title}
+                          </h3>
+                          <div className="text-xs text-[#D7B46A] font-hindi font-medium mt-0.5">
+                            {sec.hindiTitle}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Description */}
+                      <p className="text-xs text-[#F5ECDD]/75 mt-3 leading-relaxed font-body">
+                        {sec.description}
+                      </p>
+                      <p className="text-[11px] text-[#F5ECDD]/50 mt-1 font-hindi leading-relaxed">
+                        {sec.hindiDesc}
+                      </p>
+                    </div>
+
+                    {/* Footer Row: Nav link indicator */}
+                    <div className="mt-4 pt-3 border-t border-white/5 flex items-center justify-between text-[11px]">
+                      <span className="text-[#F5ECDD]/50">
+                        Header & Drawer Link:
+                      </span>
+                      <span
+                        className={`font-mono text-xs ${
+                          isEnabled ? 'text-[#D7B46A]' : 'text-zinc-500 line-through'
+                        }`}
+                      >
+                        {sec.navLabel}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Bottom Save Bar */}
+            <div className="p-5 rounded-2xl bg-[#170C18] border border-[#D7B46A]/30 flex flex-col sm:flex-row items-center justify-between gap-4 mt-8">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-full bg-[#651B2B]/50 border border-[#D7B46A]/50 flex items-center justify-center text-[#D7B46A]">
+                  <Sliders className="w-4 h-4" />
+                </div>
+                <div>
+                  <div className="text-xs font-semibold text-[#F3E5AB]">
+                    Instant Real-Time Section Visibility
+                  </div>
+                  <div className="text-[11px] text-[#F5ECDD]/60">
+                    Click "Save Visibility Settings" to immediately apply your chosen configuration to the live wedding website.
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
+                <button
+                  type="button"
+                  onClick={onBackToGuestView}
+                  className="px-4 py-2.5 rounded-xl bg-transparent hover:bg-white/5 border border-white/20 text-xs text-[#F5ECDD] transition-colors cursor-pointer"
+                >
+                  Preview Website
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSaveSections()}
+                  disabled={savingSections}
+                  className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#651B2B] via-[#E34236] to-[#651B2B] text-[#F5ECDD] text-xs font-bold tracking-wider uppercase border border-[#D7B46A]/60 shadow-lg hover:shadow-xl transition-all cursor-pointer flex items-center justify-center gap-2"
+                >
+                  {savingSections ? (
+                    <Loader2 className="w-4 h-4 animate-spin text-[#D7B46A]" />
+                  ) : (
+                    <Check className="w-4 h-4 text-[#D7B46A]" />
+                  )}
+                  <span>Save Visibility Settings</span>
+                </button>
               </div>
             </div>
           </div>

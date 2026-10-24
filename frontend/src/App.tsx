@@ -13,13 +13,20 @@ import { ClosingSceneSection } from './components/ClosingSceneSection';
 import { AudioController } from './components/AudioController';
 import { AdminPanel } from './components/AdminPanel';
 import { weddingApi, DEFAULT_DEMO_INVITATION } from './services/api';
-import type { InvitationData } from './types/wedding';
+import type { InvitationData, SectionVisibility } from './types/wedding';
 import { Menu, X, Users, Calendar, MapPin, Heart, Image } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export const App: React.FC = () => {
   const [invitation, setInvitation] = useState<InvitationData>(DEFAULT_DEMO_INVITATION);
   const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
+
+  // Helper to determine if a section is enabled by Admin (defaults to true if unset)
+  const isSectionVisible = (key: keyof SectionVisibility): boolean => {
+    const vis = invitation.theme_settings?.section_visibility;
+    if (!vis) return true;
+    return vis[key] !== false;
+  };
 
   // Intro state: check session storage so it doesn't repeat unnecessarily
   const [hasOpenedEnvelope, setHasOpenedEnvelope] = useState<boolean>(() => {
@@ -110,7 +117,7 @@ export const App: React.FC = () => {
       <CelestialUniverseCanvas interactive={true} />
 
       {/* Opening Envelope 3D Intro */}
-      {!hasOpenedEnvelope && (
+      {isSectionVisible('envelope_intro') && !hasOpenedEnvelope && (
         <OpeningEnvelopeIntro invitation={invitation} onOpen={handleOpenInvitation} />
       )}
 
@@ -135,43 +142,55 @@ export const App: React.FC = () => {
 
           {/* Desktop Navigation Links (hidden on mobile) */}
           <div className="hidden md:flex items-center gap-5 text-xs font-semibold tracking-wider uppercase">
-            <button
-              onClick={() => scrollToSection('profile-section')}
-              className="text-[#713F12]/80 hover:text-[#CA8A04] transition-colors cursor-pointer"
-            >
-              Bride & Groom
-            </button>
-            <button
-              onClick={() => scrollToSection('bride-family-section')}
-              className="text-[#713F12]/80 hover:text-[#CA8A04] transition-colors cursor-pointer"
-            >
-              Bride's Family
-            </button>
-            <button
-              onClick={() => scrollToSection('events-section')}
-              className="text-[#713F12]/80 hover:text-[#CA8A04] transition-colors cursor-pointer"
-            >
-              Ceremonies
-            </button>
-            <button
-              onClick={() => scrollToSection('venue-section')}
-              className="text-[#713F12]/80 hover:text-[#CA8A04] transition-colors cursor-pointer"
-            >
-              Venue
-            </button>
-            <button
-              onClick={() => scrollToSection('gallery-section')}
-              className="text-[#713F12]/80 hover:text-[#CA8A04] transition-colors cursor-pointer"
-            >
-              Gallery
-            </button>
+            {isSectionVisible('couple_profiles') && (
+              <button
+                onClick={() => scrollToSection('profile-section')}
+                className="text-[#713F12]/80 hover:text-[#CA8A04] transition-colors cursor-pointer"
+              >
+                Bride & Groom
+              </button>
+            )}
+            {isSectionVisible('bride_family') && (
+              <button
+                onClick={() => scrollToSection('bride-family-section')}
+                className="text-[#713F12]/80 hover:text-[#CA8A04] transition-colors cursor-pointer"
+              >
+                Bride's Family
+              </button>
+            )}
+            {isSectionVisible('events') && (
+              <button
+                onClick={() => scrollToSection('events-section')}
+                className="text-[#713F12]/80 hover:text-[#CA8A04] transition-colors cursor-pointer"
+              >
+                Ceremonies
+              </button>
+            )}
+            {isSectionVisible('venue_travel') && (
+              <button
+                onClick={() => scrollToSection('venue-section')}
+                className="text-[#713F12]/80 hover:text-[#CA8A04] transition-colors cursor-pointer"
+              >
+                Venue
+              </button>
+            )}
+            {isSectionVisible('gallery') && (
+              <button
+                onClick={() => scrollToSection('gallery-section')}
+                className="text-[#713F12]/80 hover:text-[#CA8A04] transition-colors cursor-pointer"
+              >
+                Gallery
+              </button>
+            )}
 
-            <button
-              onClick={() => scrollToSection('rsvp-section')}
-              className="px-4 py-1.5 rounded-full bg-gradient-to-r from-[#FACC15] via-[#EAB308] to-[#CA8A04] text-[#451A03] border border-[#FDE047] shadow-[0_2px_12px_rgba(234,179,8,0.35)] hover:shadow-[0_4px_18px_rgba(234,179,8,0.5)] transition-all cursor-pointer text-[11px] font-bold"
-            >
-              RSVP
-            </button>
+            {isSectionVisible('rsvp') && (
+              <button
+                onClick={() => scrollToSection('rsvp-section')}
+                className="px-4 py-1.5 rounded-full bg-gradient-to-r from-[#FACC15] via-[#EAB308] to-[#CA8A04] text-[#451A03] border border-[#FDE047] shadow-[0_2px_12px_rgba(234,179,8,0.35)] hover:shadow-[0_4px_18px_rgba(234,179,8,0.5)] transition-all cursor-pointer text-[11px] font-bold"
+              >
+                RSVP
+              </button>
+            )}
           </div>
 
           {/* Mobile Menu Toggle Button (shown ONLY on mobile) */}
@@ -195,83 +214,97 @@ export const App: React.FC = () => {
               className="md:hidden overflow-hidden bg-[#FFFDF7]/98 border-t border-[#EAB308]/30 shadow-xl px-5 py-4"
             >
               <div className="flex flex-col gap-2.5">
-                <button
-                  onClick={() => {
-                    scrollToSection('profile-section');
-                    setMobileMenuOpen(false);
-                  }}
-                  className="flex items-center gap-3 p-2 rounded-xl hover:bg-[#FEFCE8] text-[#713F12] font-semibold text-xs tracking-wider uppercase text-left transition-colors cursor-pointer"
-                >
-                  <Users className="w-4 h-4 text-[#CA8A04]" />
-                  <span>Bride & Groom (परिचय)</span>
-                </button>
-
-                <button
-                  onClick={() => {
-                    scrollToSection('bride-family-section');
-                    setMobileMenuOpen(false);
-                  }}
-                  className="flex items-center gap-3 p-2 rounded-xl hover:bg-[#FEFCE8] text-[#713F12] font-semibold text-xs tracking-wider uppercase text-left transition-colors cursor-pointer"
-                >
-                  <Heart className="w-4 h-4 text-[#EA580C]" />
-                  <span>Bride's Family (वधू पक्ष परिवार)</span>
-                </button>
-
-                <button
-                  onClick={() => {
-                    scrollToSection('events-section');
-                    setMobileMenuOpen(false);
-                  }}
-                  className="flex items-center gap-3 p-2 rounded-xl hover:bg-[#FEFCE8] text-[#713F12] font-semibold text-xs tracking-wider uppercase text-left transition-colors cursor-pointer"
-                >
-                  <Calendar className="w-4 h-4 text-[#CA8A04]" />
-                  <span>Ceremonies (कार्यक्रम)</span>
-                </button>
-
-                <button
-                  onClick={() => {
-                    scrollToSection('venue-section');
-                    setMobileMenuOpen(false);
-                  }}
-                  className="flex items-center gap-3 p-2 rounded-xl hover:bg-[#FEFCE8] text-[#713F12] font-semibold text-xs tracking-wider uppercase text-left transition-colors cursor-pointer"
-                >
-                  <MapPin className="w-4 h-4 text-[#EA580C]" />
-                  <span>Venue & Travel (विवाह स्थल)</span>
-                </button>
-
-                <button
-                  onClick={() => {
-                    scrollToSection('story-section');
-                    setMobileMenuOpen(false);
-                  }}
-                  className="flex items-center gap-3 p-2 rounded-xl hover:bg-[#FEFCE8] text-[#713F12] font-semibold text-xs tracking-wider uppercase text-left transition-colors cursor-pointer"
-                >
-                  <Heart className="w-4 h-4 text-[#EA580C]" />
-                  <span>Our Story (प्रेम कथा)</span>
-                </button>
-
-                <button
-                  onClick={() => {
-                    scrollToSection('gallery-section');
-                    setMobileMenuOpen(false);
-                  }}
-                  className="flex items-center gap-3 p-2 rounded-xl hover:bg-[#FEFCE8] text-[#713F12] font-semibold text-xs tracking-wider uppercase text-left transition-colors cursor-pointer"
-                >
-                  <Image className="w-4 h-4 text-[#CA8A04]" />
-                  <span>Royal Gallery (फोटो गैलरी)</span>
-                </button>
-
-                <div className="pt-2 border-t border-[#EAB308]/30">
+                {isSectionVisible('couple_profiles') && (
                   <button
                     onClick={() => {
-                      scrollToSection('rsvp-section');
+                      scrollToSection('profile-section');
                       setMobileMenuOpen(false);
                     }}
-                    className="w-full py-2.5 rounded-full bg-gradient-to-r from-[#FACC15] via-[#EAB308] to-[#CA8A04] text-[#451A03] font-bold text-xs tracking-widest uppercase border border-[#FEF08A] shadow-[0_2px_12px_rgba(234,179,8,0.35)] flex items-center justify-center gap-2 cursor-pointer"
+                    className="flex items-center gap-3 p-2 rounded-xl hover:bg-[#FEFCE8] text-[#713F12] font-semibold text-xs tracking-wider uppercase text-left transition-colors cursor-pointer"
                   >
-                    <span>Send Blessings (RSVP)</span>
+                    <Users className="w-4 h-4 text-[#CA8A04]" />
+                    <span>Bride & Groom (परिचय)</span>
                   </button>
-                </div>
+                )}
+
+                {isSectionVisible('bride_family') && (
+                  <button
+                    onClick={() => {
+                      scrollToSection('bride-family-section');
+                      setMobileMenuOpen(false);
+                    }}
+                    className="flex items-center gap-3 p-2 rounded-xl hover:bg-[#FEFCE8] text-[#713F12] font-semibold text-xs tracking-wider uppercase text-left transition-colors cursor-pointer"
+                  >
+                    <Heart className="w-4 h-4 text-[#EA580C]" />
+                    <span>Bride's Family (वधू पक्ष परिवार)</span>
+                  </button>
+                )}
+
+                {isSectionVisible('events') && (
+                  <button
+                    onClick={() => {
+                      scrollToSection('events-section');
+                      setMobileMenuOpen(false);
+                    }}
+                    className="flex items-center gap-3 p-2 rounded-xl hover:bg-[#FEFCE8] text-[#713F12] font-semibold text-xs tracking-wider uppercase text-left transition-colors cursor-pointer"
+                  >
+                    <Calendar className="w-4 h-4 text-[#CA8A04]" />
+                    <span>Ceremonies (कार्यक्रम)</span>
+                  </button>
+                )}
+
+                {isSectionVisible('venue_travel') && (
+                  <button
+                    onClick={() => {
+                      scrollToSection('venue-section');
+                      setMobileMenuOpen(false);
+                    }}
+                    className="flex items-center gap-3 p-2 rounded-xl hover:bg-[#FEFCE8] text-[#713F12] font-semibold text-xs tracking-wider uppercase text-left transition-colors cursor-pointer"
+                  >
+                    <MapPin className="w-4 h-4 text-[#EA580C]" />
+                    <span>Venue & Travel (विवाह स्थल)</span>
+                  </button>
+                )}
+
+                {isSectionVisible('story') && (
+                  <button
+                    onClick={() => {
+                      scrollToSection('story-section');
+                      setMobileMenuOpen(false);
+                    }}
+                    className="flex items-center gap-3 p-2 rounded-xl hover:bg-[#FEFCE8] text-[#713F12] font-semibold text-xs tracking-wider uppercase text-left transition-colors cursor-pointer"
+                  >
+                    <Heart className="w-4 h-4 text-[#EA580C]" />
+                    <span>Our Story (प्रेम कथा)</span>
+                  </button>
+                )}
+
+                {isSectionVisible('gallery') && (
+                  <button
+                    onClick={() => {
+                      scrollToSection('gallery-section');
+                      setMobileMenuOpen(false);
+                    }}
+                    className="flex items-center gap-3 p-2 rounded-xl hover:bg-[#FEFCE8] text-[#713F12] font-semibold text-xs tracking-wider uppercase text-left transition-colors cursor-pointer"
+                  >
+                    <Image className="w-4 h-4 text-[#CA8A04]" />
+                    <span>Royal Gallery (फोटो गैलरी)</span>
+                  </button>
+                )}
+
+                {isSectionVisible('rsvp') && (
+                  <div className="pt-2 border-t border-[#EAB308]/30">
+                    <button
+                      onClick={() => {
+                        scrollToSection('rsvp-section');
+                        setMobileMenuOpen(false);
+                      }}
+                      className="w-full py-2.5 rounded-full bg-gradient-to-r from-[#FACC15] via-[#EAB308] to-[#CA8A04] text-[#451A03] font-bold text-xs tracking-widest uppercase border border-[#FEF08A] shadow-[0_2px_12px_rgba(234,179,8,0.35)] flex items-center justify-center gap-2 cursor-pointer"
+                    >
+                      <span>Send Blessings (RSVP)</span>
+                    </button>
+                  </div>
+                )}
               </div>
             </motion.div>
           )}
@@ -281,43 +314,61 @@ export const App: React.FC = () => {
       {/* Main Guest Journey Flow */}
       <main className="relative z-10 pt-14 sm:pt-16">
         {/* Cinematic Hero Header with Ganesha Blessing (Secret Admin Gateway on tap) & Couple Picture */}
-        <CinematicHero
-          invitation={invitation}
-          onExploreProfiles={() => scrollToSection('profile-section')}
-          onViewEvents={() => scrollToSection('events-section')}
-          onRsvp={() => scrollToSection('rsvp-section')}
-          onOpenAdmin={() => {
-            window.location.hash = 'admin';
-            setIsAdminView(true);
-          }}
-        />
+        {isSectionVisible('hero') && (
+          <CinematicHero
+            invitation={invitation}
+            onExploreProfiles={isSectionVisible('couple_profiles') ? () => scrollToSection('profile-section') : undefined}
+            onViewEvents={isSectionVisible('events') ? () => scrollToSection('events-section') : undefined}
+            onRsvp={isSectionVisible('rsvp') ? () => scrollToSection('rsvp-section') : undefined}
+            onOpenAdmin={() => {
+              window.location.hash = 'admin';
+              setIsAdminView(true);
+            }}
+          />
+        )}
 
         {/* Bride & Groom Detailed Profile & Qualifications Section (Bride First) */}
-        <CoupleProfileSection invitation={invitation} />
+        {isSectionVisible('couple_profiles') && (
+          <CoupleProfileSection invitation={invitation} />
+        )}
 
         {/* Bride's Family Members Section */}
-        <BrideFamilySection invitation={invitation} />
+        {isSectionVisible('bride_family') && (
+          <BrideFamilySection invitation={invitation} />
+        )}
 
         {/* Wedding Events / Ceremonies Section */}
-        <WeddingEventsSection events={invitation.events || []} />
+        {isSectionVisible('events') && (
+          <WeddingEventsSection events={invitation.events || []} />
+        )}
 
         {/* Venue & Travel Logistics Section */}
-        <VenueTravelSection venue={invitation.venue_travel} />
+        {isSectionVisible('venue_travel') && (
+          <VenueTravelSection venue={invitation.venue_travel} />
+        )}
 
         {/* RSVP Section */}
-        <RsvpSection invitation={invitation} />
+        {isSectionVisible('rsvp') && (
+          <RsvpSection invitation={invitation} />
+        )}
 
         {/* Couple Story Section */}
-        <CoupleStorySection stories={invitation.stories || []} />
+        {isSectionVisible('story') && (
+          <CoupleStorySection stories={invitation.stories || []} />
+        )}
 
         {/* Cinematic Gallery Section */}
-        <CinematicGallerySection gallery={invitation.gallery || []} />
+        {isSectionVisible('gallery') && (
+          <CinematicGallerySection gallery={invitation.gallery || []} />
+        )}
 
         {/* Closing Scene Section */}
-        <ClosingSceneSection
-          invitation={invitation}
-          onRevisitInvitation={handleRevisitInvitation}
-        />
+        {isSectionVisible('closing_scene') && (
+          <ClosingSceneSection
+            invitation={invitation}
+            onRevisitInvitation={handleRevisitInvitation}
+          />
+        )}
       </main>
     </div>
   );

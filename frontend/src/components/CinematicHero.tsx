@@ -6,7 +6,7 @@ import type { InvitationData } from '../types/wedding';
 interface CinematicHeroProps {
   invitation: InvitationData;
   onExploreProfiles?: () => void;
-  onViewEvents: () => void;
+  onViewEvents?: () => void;
   onRsvp?: () => void;
   onOpenAdmin?: () => void;
 }
@@ -265,12 +265,14 @@ export const CinematicHero: React.FC<CinematicHeroProps> = ({
             </button>
           )}
 
-          <button
-            onClick={onViewEvents}
-            className="w-full sm:w-auto px-5 sm:px-6 py-3 sm:py-2.5 rounded-full bg-white hover:bg-[#FEFCE8] text-[#713F12] text-xs font-bold tracking-wider uppercase border-2 border-[#EAB308] shadow-sm transition-all cursor-pointer text-center"
-          >
-            Ceremony Dates (कार्यक्रम)
-          </button>
+          {onViewEvents && (
+            <button
+              onClick={onViewEvents}
+              className="w-full sm:w-auto px-5 sm:px-6 py-3 sm:py-2.5 rounded-full bg-white hover:bg-[#FEFCE8] text-[#713F12] text-xs font-bold tracking-wider uppercase border-2 border-[#EAB308] shadow-sm transition-all cursor-pointer text-center"
+            >
+              Ceremony Dates (कार्यक्रम)
+            </button>
+          )}
 
           {onRsvp && (
             <button
@@ -283,13 +285,15 @@ export const CinematicHero: React.FC<CinematicHeroProps> = ({
         </div>
 
         {/* Subtle Scroll Indicator */}
-        <div
-          onClick={onExploreProfiles || onViewEvents}
-          className="text-[#854D0E] flex flex-col items-center gap-1 cursor-pointer pt-2 group"
-        >
-          <span className="text-[9px] uppercase tracking-widest text-[#713F12] font-bold">Scroll to Celebrate</span>
-          <ChevronDown className="w-4 h-4 text-[#CA8A04] group-hover:translate-y-1 transition-transform" />
-        </div>
+        {(onExploreProfiles || onViewEvents) && (
+          <div
+            onClick={onExploreProfiles || onViewEvents}
+            className="text-[#854D0E] flex flex-col items-center gap-1 cursor-pointer pt-2 group"
+          >
+            <span className="text-[9px] uppercase tracking-widest text-[#713F12] font-bold">Scroll to Celebrate</span>
+            <ChevronDown className="w-4 h-4 text-[#CA8A04] group-hover:translate-y-1 transition-transform" />
+          </div>
+        )}
       </motion.div>
     </section>
   );
