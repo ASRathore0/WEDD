@@ -66,7 +66,7 @@ export const App: React.FC = () => {
     const fetchLiveInvitation = async () => {
       try {
         const pathParts = window.location.pathname.split('/').filter(Boolean);
-        const slug = pathParts[0] === 'invite' && pathParts[1] ? pathParts[1] : 'devansh-samaira';
+        const slug = pathParts[0] === 'invite' && pathParts[1] ? pathParts[1] : 'default';
         const data = await weddingApi.getInvitation(slug);
         setInvitation(data);
       } catch (err) {

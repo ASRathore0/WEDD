@@ -34,9 +34,20 @@ export const CinematicHero: React.FC<CinematicHeroProps> = ({
     isPast: false,
   });
 
+  // Find wedding event if defined in invitation.events
+  const weddingEvent = invitation.events?.find(
+    (e) => e.event_type === 'wedding' || e.title?.toLowerCase().includes('vivah') || e.title?.toLowerCase().includes('wedding')
+  );
+
+  // Effective wedding date (sync with wedding ceremony or invitation wedding date)
+  const effectiveWeddingDate = invitation.wedding_date || weddingEvent?.event_date || '2026-11-30 19:00:00';
+
   useEffect(() => {
     const calculateCountdown = () => {
-      const target = new Date(invitation.wedding_date).getTime();
+      let target = new Date(effectiveWeddingDate).getTime();
+      if (isNaN(target)) {
+        target = new Date('2026-11-30T19:00:00').getTime();
+      }
       const now = new Date().getTime();
       const difference = target - now;
 
@@ -56,14 +67,159 @@ export const CinematicHero: React.FC<CinematicHeroProps> = ({
     calculateCountdown();
     const timer = setInterval(calculateCountdown, 1000);
     return () => clearInterval(timer);
-  }, [invitation.wedding_date]);
+  }, [effectiveWeddingDate]);
 
-  const weddingDateFormatted = new Date(invitation.wedding_date).toLocaleDateString('en-US', {
-    weekday: 'long',
-    month: 'long',
-    day: 'numeric',
-    year: 'numeric',
-  });
+  // Safe wedding date formatting without timezone distortion
+  const formatWeddingDateSafely = (dateStr?: string): string => {
+    if (!dateStr) return 'Monday, November 30, 2026';
+    const clean = dateStr.replace('T', ' ');
+    const [dateOnly] = clean.split(' ');
+    const parts = dateOnly.split('-');
+    if (parts.length === 3) {
+      const y = parseInt(parts[0], 10);
+      const m = parseInt(parts[1], 10) - 1;
+      const d = parseInt(parts[2], 10);
+      const dt = new Date(y, m, d);
+      if (!isNaN(dt.getTime())) {
+        return dt.toLocaleDateString('en-US', {
+          weekday: 'long',
+          month: 'long',
+          day: 'numeric',
+          year: 'numeric',
+        });
+      }
+    }
+    const fallback = new Date(dateStr);
+    return isNaN(fallback.getTime())
+      ? dateStr
+      : fallback.toLocaleDateString('en-US', {
+          weekday: 'long',
+          month: 'long',
+          day: 'numeric',
+          year: 'numeric',
+        });
+  };
+
+  const weddingDateFormatted = formatWeddingDateSafely(effectiveWeddingDate);
+
+  // Dynamic ceremony pills derived from invitation.events (updated live from admin panel)
+  const ceremonyPills =
+    invitation.events && invitation.events.length > 0
+      ? [...invitation.events]
+          .sort((a, b) => (a.order_index ?? 0) - (b.order_index ?? 0))
+          .map((evt) => {
+            let label = 'CEREMONY';
+            if (evt.event_type && evt.event_type !== 'other') {
+              label = evt.event_type.toUpperCase();
+            } else if (evt.title) {
+              const first = evt.title.split(/[\s(&/-]+/)[0].trim().toUpperCase();
+              label = first || 'CEREMONY';
+            }
+
+            // Format date e.g. "2026-11-28" -> "28 Nov"
+            let dateStr = evt.event_date || '';
+            if (dateStr) {
+              const clean = dateStr.replace('T', ' ');
+              const [dateOnly] = clean.split(' ');
+              const parts = dateOnly.split('-');
+              if (parts.length === 3) {
+                const y = parseInt(parts[0], 10);
+                const m = parseInt(parts[1], 10) - 1;
+                const d = parseInt(parts[2], 10);
+                const dt = new Date(y, m, d);
+                if (!isNaN(dt.getTime())) {
+                  dateStr = dt.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
+                }
+              }
+            }
+
+            // Theme styling based on ceremony type
+            let pillBg = 'bg-[#FFFDF5]';
+            let pillBorder = 'border-[#EAB308]';
+            let pillText = 'text-[#713F12]';
+            let labelText = 'text-[#854D0E]';
+            let dotBg = 'bg-[#EAB308] shadow-[0_0_8px_#EAB308]';
+
+            const t = (evt.event_type || label || '').toLowerCase();
+            if (t.includes('haldi')) {
+              pillBg = 'bg-[#FFFDF5]';
+              pillBorder = 'border-[#EAB308]';
+              pillText = 'text-[#713F12]';
+              labelText = 'text-[#854D0E]';
+              dotBg = 'bg-[#EAB308] shadow-[0_0_8px_#EAB308]';
+            } else if (t.includes('mehendi') || t.includes('mehndi')) {
+              pillBg = 'bg-[#F0FDF4]';
+              pillBorder = 'border-[#10B981]';
+              pillText = 'text-[#065F46]';
+              labelText = 'text-[#047857]';
+              dotBg = 'bg-[#10B981] shadow-[0_0_8px_#10B981]';
+            } else if (t.includes('sangeet')) {
+              pillBg = 'bg-[#FAF5FF]';
+              pillBorder = 'border-[#A855F7]';
+              pillText = 'text-[#581C87]';
+              labelText = 'text-[#7E22CE]';
+              dotBg = 'bg-[#A855F7] shadow-[0_0_8px_#A855F7]';
+            } else if (t.includes('wedding') || t.includes('vivah') || t.includes('pheras')) {
+              pillBg = 'bg-[#FFF7ED]';
+              pillBorder = 'border-[#EA580C]';
+              pillText = 'text-[#9A3412]';
+              labelText = 'text-[#C2410C]';
+              dotBg = 'bg-[#EA580C] shadow-[0_0_8px_#EA580C]';
+            } else if (t.includes('reception') || t.includes('preeti')) {
+              pillBg = 'bg-[#FEFCE8]';
+              pillBorder = 'border-[#CA8A04]';
+              pillText = 'text-[#713F12]';
+              labelText = 'text-[#854D0E]';
+              dotBg = 'bg-[#CA8A04] shadow-[0_0_8px_#CA8A04]';
+            }
+
+            return {
+              id: evt.id,
+              label,
+              dateStr,
+              fullName: evt.title,
+              pillBg,
+              pillBorder,
+              pillText,
+              labelText,
+              dotBg,
+            };
+          })
+      : [
+          {
+            id: 1,
+            label: 'HALDI',
+            dateStr: '28 Nov',
+            fullName: 'Haldi Ceremony',
+            pillBg: 'bg-[#FFFDF5]',
+            pillBorder: 'border-[#EAB308]',
+            pillText: 'text-[#713F12]',
+            labelText: 'text-[#854D0E]',
+            dotBg: 'bg-[#EAB308] shadow-[0_0_8px_#EAB308]',
+          },
+          {
+            id: 2,
+            label: 'MEHNDI',
+            dateStr: '29 Nov',
+            fullName: 'Mehndi & Sangeet',
+            pillBg: 'bg-[#F0FDF4]',
+            pillBorder: 'border-[#10B981]',
+            pillText: 'text-[#065F46]',
+            labelText: 'text-[#047857]',
+            dotBg: 'bg-[#10B981] shadow-[0_0_8px_#10B981]',
+          },
+          {
+            id: 3,
+            label: 'WEDDING',
+            dateStr: '30 Nov',
+            fullName: 'Shubh Vivah',
+            pillBg: 'bg-[#FFF7ED]',
+            pillBorder: 'border-[#EA580C]',
+            pillText: 'text-[#9A3412]',
+            labelText: 'text-[#C2410C]',
+            dotBg: 'bg-[#EA580C] shadow-[0_0_8px_#EA580C]',
+          },
+        ];
 
   const heroImage = invitation.hero_image_url || '/images/amit_sweety_hero.jpg';
   const theme = invitation.theme_settings || {};
@@ -188,21 +344,25 @@ export const CinematicHero: React.FC<CinematicHeroProps> = ({
           </p>
         )}
 
-        {/* Auspicious Ceremony Dates Summary Pills (Haldi, Mehndi, Wedding) in Turmeric Theme */}
-        <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-3 mt-2 sm:mt-3 max-w-2xl px-1">
-          <div className="px-2.5 py-1 sm:px-3.5 sm:py-1.5 rounded-lg bg-[#FFFDF5] border border-[#EAB308] text-[11px] sm:text-xs text-[#713F12] flex items-center gap-1.5 shadow-sm font-medium">
-            <span className="w-2 h-2 rounded-full bg-[#EAB308] shadow-[0_0_8px_#EAB308]" />
-            <span className="text-[#854D0E] font-bold">HALDI:</span> 28 Nov
+        {/* Auspicious Ceremony Dates Summary Pills (Dynamically loaded from Admin Panel Events) */}
+        {ceremonyPills.length > 0 && (
+          <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-3 mt-2 sm:mt-3 max-w-2xl px-1">
+            {ceremonyPills.map((pill) => (
+              <div
+                key={pill.id}
+                onClick={onViewEvents}
+                className={`px-2.5 py-1 sm:px-3.5 sm:py-1.5 rounded-lg ${pill.pillBg} border ${pill.pillBorder} ${pill.pillText} text-[11px] sm:text-xs flex items-center gap-1.5 shadow-sm font-medium ${
+                  onViewEvents ? 'cursor-pointer hover:scale-105 active:scale-95 transition-transform' : ''
+                }`}
+                title={pill.fullName}
+              >
+                <span className={`w-2 h-2 rounded-full ${pill.dotBg}`} />
+                <span className={`${pill.labelText} font-bold`}>{pill.label}:</span>{' '}
+                <span>{pill.dateStr}</span>
+              </div>
+            ))}
           </div>
-          <div className="px-2.5 py-1 sm:px-3.5 sm:py-1.5 rounded-lg bg-[#F0FDF4] border border-[#10B981] text-[11px] sm:text-xs text-[#065F46] flex items-center gap-1.5 shadow-sm font-medium">
-            <span className="w-2 h-2 rounded-full bg-[#10B981] shadow-[0_0_8px_#10B981]" />
-            <span className="text-[#047857] font-bold">MEHNDI:</span> 29 Nov
-          </div>
-          <div className="px-2.5 py-1 sm:px-3.5 sm:py-1.5 rounded-lg bg-[#FFF7ED] border border-[#EA580C] text-[11px] sm:text-xs text-[#9A3412] flex items-center gap-1.5 shadow-sm font-medium">
-            <span className="w-2 h-2 rounded-full bg-[#EA580C] shadow-[0_0_8px_#EA580C]" />
-            <span className="text-[#C2410C] font-bold">WEDDING:</span> 30 Nov
-          </div>
-        </div>
+        )}
 
         {/* Main Wedding Date & Venue Location Badges */}
         <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-4 mt-3 text-xs sm:text-sm px-2">

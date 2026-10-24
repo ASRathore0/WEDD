@@ -450,7 +450,28 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onBackToGuestView }) => 
 
     try {
       await weddingApi.saveAdminEvent(editingEvent);
-      showFeedback('success', 'Ceremony saved.');
+
+      // If this event was a wedding/vivah ceremony, keep main wedding_date in sync
+      if (
+        (editingEvent.event_type === 'wedding' ||
+          editingEvent.title?.toLowerCase().includes('vivah') ||
+          editingEvent.title?.toLowerCase().includes('wedding')) &&
+        editingEvent.event_date
+      ) {
+        const timePart = editingEvent.start_time ? ' 19:00:00' : ' 19:00:00';
+        const syncedDate = `${editingEvent.event_date}${timePart}`;
+        try {
+          await weddingApi.updateAdminInvitation({
+            ...invitationForm,
+            wedding_date: syncedDate,
+          });
+          setInvitationForm((prev) => ({ ...prev, wedding_date: syncedDate }));
+        } catch {
+          // ignore sync error
+        }
+      }
+
+      showFeedback('success', 'Ceremony date updated! Hero section & timeline refreshed live.');
       setEditingEvent(null);
       loadAllData();
     } catch (err: any) {
@@ -1949,19 +1970,26 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onBackToGuestView }) => 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
                 <label className="block text-xs uppercase tracking-widest text-[#D7B46A] mb-1 font-medium">
-                  Wedding Date & Time
+                  Main Wedding Date & Time
                 </label>
                 <input
-                  type="text"
+                  type="datetime-local"
                   required
                   value={
                     invitationForm.wedding_date
-                      ? new Date(invitationForm.wedding_date).toISOString().slice(0, 19).replace('T', ' ')
-                      : '2026-11-28 18:30:00'
+                      ? invitationForm.wedding_date.replace(' ', 'T').slice(0, 16)
+                      : '2026-11-30T19:00'
                   }
-                  onChange={(e) => setInvitationForm({ ...invitationForm, wedding_date: e.target.value })}
+                  onChange={(e) => {
+                    const raw = e.target.value;
+                    const val = raw ? raw.replace('T', ' ') + (raw.length === 16 ? ':00' : '') : '';
+                    setInvitationForm({ ...invitationForm, wedding_date: val });
+                  }}
                   className="w-full px-4 py-2.5 rounded-xl bg-[#120A14] border border-[#D7B46A]/25 text-[#F5ECDD] text-sm focus:outline-none focus:border-[#D7B46A]"
                 />
+                <span className="text-[10px] text-[#F5ECDD]/60 mt-1 block">
+                  Controls the Hero countdown timer & main date badge
+                </span>
               </div>
 
               <div>
