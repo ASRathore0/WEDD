@@ -57,6 +57,7 @@ class InvitationController extends Controller
             'ganesh_image_file' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:10240'], // max 10MB
             'bride_image_file' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:15360'], // max 15MB
             'groom_image_file' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:15360'], // max 15MB
+            'audio_file' => ['nullable', 'file', 'mimes:mp3,wav,ogg,m4a,aac,webm', 'max:30720'], // max 30MB
         ]);
 
         if ($request->hasFile('hero_image_file')) {
@@ -89,6 +90,11 @@ class InvitationController extends Controller
             }
             $currentTheme['groom_details']['photo_url'] = Storage::url($path);
             $validated['theme_settings'] = $currentTheme;
+        }
+
+        if ($request->hasFile('audio_file')) {
+            $path = $request->file('audio_file')->store('audio', 'public');
+            $validated['audio_url'] = Storage::url($path);
         }
 
         $invitation->update($validated);

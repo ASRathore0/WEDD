@@ -9,15 +9,22 @@ interface AudioControllerProps {
 }
 
 export const AudioController: React.FC<AudioControllerProps> = ({
-  audioUrl = 'https://assets.mixkit.co/music/preview/mixkit-serene-view-443.mp3',
-  audioTitle = 'Raag Darbari — Santoor & Sitar Reverie',
+  audioUrl = '/audio/shehnai_vivah.mp3',
+  audioTitle = 'Shehnai & Sitar — Auspicious Vivah Dhun',
   autoPlayTrigger = false,
 }) => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [currentSrc, setCurrentSrc] = useState<string>(audioUrl || '/audio/shehnai_vivah.mp3');
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [isMuted, setIsMuted] = useState<boolean>(false);
-  const [hasError, setHasError] = useState<boolean>(false);
   const [showTooltip, setShowTooltip] = useState<boolean>(false);
+
+  // Update src if audioUrl prop changes
+  useEffect(() => {
+    if (audioUrl) {
+      setCurrentSrc(audioUrl);
+    }
+  }, [audioUrl]);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -26,12 +33,17 @@ export const AudioController: React.FC<AudioControllerProps> = ({
     audio.volume = 0.35; // gentle default volume
     audio.loop = true;
 
-    const onPlay = () => setIsPlaying(true);
+    const onPlay = () => {
+      setIsPlaying(true);
+    };
     const onPause = () => setIsPlaying(false);
     const onError = () => {
-      console.warn('Audio playback encountered an issue, running in graceful silent mode.');
-      setHasError(true);
-      setIsPlaying(false);
+      console.warn('Audio playback encountered an issue, trying fallback local audio.');
+      if (currentSrc !== '/audio/shehnai_vivah.mp3') {
+        setCurrentSrc('/audio/shehnai_vivah.mp3');
+      } else {
+        setIsPlaying(false);
+      }
     };
 
     audio.addEventListener('play', onPlay);
@@ -43,11 +55,11 @@ export const AudioController: React.FC<AudioControllerProps> = ({
       audio.removeEventListener('pause', onPause);
       audio.removeEventListener('error', onError);
     };
-  }, []);
+  }, [currentSrc]);
 
-  // Triggered when user opens the invitation (explicit interaction requirement fulfilled!)
+  // Triggered when user opens the invitation (explicit user interaction fulfilled)
   useEffect(() => {
-    if (autoPlayTrigger && audioRef.current && !isPlaying && !hasError) {
+    if (autoPlayTrigger && audioRef.current && !isPlaying) {
       audioRef.current
         .play()
         .then(() => {
@@ -57,7 +69,7 @@ export const AudioController: React.FC<AudioControllerProps> = ({
           console.log('Autoplay prevented by browser policy until next interaction:', err);
         });
     }
-  }, [autoPlayTrigger, hasError]);
+  }, [autoPlayTrigger, isPlaying, currentSrc]);
 
   const togglePlay = () => {
     const audio = audioRef.current;
@@ -66,7 +78,15 @@ export const AudioController: React.FC<AudioControllerProps> = ({
     if (isPlaying) {
       audio.pause();
     } else {
-      audio.play().catch(() => setHasError(true));
+      audio
+        .play()
+        .then(() => setIsPlaying(true))
+        .catch((e) => {
+          console.warn('Playback error:', e);
+          if (currentSrc !== '/audio/shehnai_vivah.mp3') {
+            setCurrentSrc('/audio/shehnai_vivah.mp3');
+          }
+        });
     }
   };
 
@@ -78,11 +98,9 @@ export const AudioController: React.FC<AudioControllerProps> = ({
     setIsMuted(!isMuted);
   };
 
-  if (hasError) return null; // Graceful non-obstructive fallback
-
   return (
     <>
-      <audio ref={audioRef} src={audioUrl} preload="auto" />
+      <audio ref={audioRef} src={currentSrc} preload="auto" />
 
       {/* Floating Audio Controller Widget */}
       <div className="fixed bottom-5 right-5 z-40 flex items-center gap-2">

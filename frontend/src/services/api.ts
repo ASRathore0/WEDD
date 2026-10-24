@@ -16,7 +16,7 @@ export const DEFAULT_DEMO_INVITATION: InvitationData = {
   hero_image_url: '/images/amit_sweety_hero.jpg',
   celestial_quote: 'With the divine blessings of Lord Ganesha and our beloved elders, we begin our lifelong sacred journey.',
   audio_title: 'Shehnai & Sitar — Auspicious Vivah Dhun',
-  audio_url: 'https://assets.mixkit.co/music/preview/mixkit-serene-view-443.mp3',
+  audio_url: '/audio/shehnai_vivah.mp3',
   is_published: true,
   theme_settings: {
     primary_color: '#EAB308',

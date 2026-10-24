@@ -37,8 +37,8 @@ class WeddingUniverseSeeder extends Seeder
                 'venue_city' => 'Udaipur, Rajasthan',
                 'tagline' => 'Two souls bound across celestial constellations and timeless moonlight.',
                 'celestial_quote' => 'In a universe of billions of galaxies, our stars converged into one eternal harmony.',
-                'audio_title' => 'Celestial Raag - Santoor & Sitar Reverie',
-                'audio_url' => 'https://assets.mixkit.co/music/preview/mixkit-serene-view-443.mp3',
+                'audio_title' => 'Shehnai & Sitar — Auspicious Vivah Dhun',
+                'audio_url' => '/audio/shehnai_vivah.mp3',
                 'is_published' => true,
                 'theme_settings' => [
                     'primary_color' => '#651B2B', // Oxblood

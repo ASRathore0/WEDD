@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import {
   Shield,
@@ -19,6 +19,10 @@ import {
   Loader2,
   Eye,
   Upload,
+  Music,
+  Play,
+  Pause,
+  Disc,
 } from 'lucide-react';
 import { weddingApi } from '../services/api';
 import type {
@@ -138,6 +142,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onBackToGuestView }) => 
   const [isUploadingGanesh, setIsUploadingGanesh] = useState<boolean>(false);
   const [isUploadingBride, setIsUploadingBride] = useState<boolean>(false);
   const [isUploadingGroom, setIsUploadingGroom] = useState<boolean>(false);
+  const [isUploadingAudio, setIsUploadingAudio] = useState<boolean>(false);
+  const [isPreviewPlaying, setIsPreviewPlaying] = useState<boolean>(false);
+  const audioPreviewRef = useRef<HTMLAudioElement | null>(null);
 
   // Helper updaters for Indian Wedding fields (Bride first, then Groom)
   const updateBrideField = (field: string, val: string) => {
@@ -369,6 +376,63 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onBackToGuestView }) => 
       showFeedback('error', 'Failed to upload Groom photo.');
     } finally {
       setIsUploadingGroom(false);
+    }
+  };
+
+  const handleAudioFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsUploadingAudio(true);
+    try {
+      const formData = new FormData();
+      formData.append('audio_file', file);
+      formData.append('title', invitationForm.title || 'Shubh Vivah');
+      formData.append('partner_one', invitationForm.partner_one || 'Sweety Singh');
+      formData.append('partner_two', invitationForm.partner_two || 'Amit Kumar Singh');
+      formData.append(
+        'wedding_date',
+        invitationForm.wedding_date
+          ? new Date(invitationForm.wedding_date).toISOString().slice(0, 19).replace('T', ' ')
+          : '2026-11-30 19:00:00'
+      );
+      formData.append('wedding_timezone', invitationForm.wedding_timezone || 'Asia/Kolkata');
+      formData.append('venue_city', invitationForm.venue_city || 'Shiv Bajrang Hotel, Thawe');
+      formData.append('is_published', invitationForm.is_published ? '1' : '0');
+      if (invitationForm.tagline) formData.append('tagline', invitationForm.tagline);
+      const trackTitle = invitationForm.audio_title || file.name.replace(/\.[^/.]+$/, '');
+      formData.append('audio_title', trackTitle);
+      if (invitationForm.theme_settings) {
+        formData.append('theme_settings', JSON.stringify(invitationForm.theme_settings));
+      }
+
+      const res = await weddingApi.updateAdminInvitation(formData);
+      if (res?.data?.audio_url) {
+        setInvitationForm((prev) => ({
+          ...prev,
+          audio_url: res.data.audio_url,
+          audio_title: res.data.audio_title || trackTitle,
+        }));
+        showFeedback('success', 'New wedding soundtrack uploaded and applied live!');
+      }
+      loadAllData();
+    } catch (err: any) {
+      showFeedback('error', 'Failed to upload audio file. Ensure format is MP3/WAV/M4A/OGG.');
+    } finally {
+      setIsUploadingAudio(false);
+    }
+  };
+
+  const togglePreviewAudio = () => {
+    const audio = audioPreviewRef.current;
+    if (!audio) return;
+    if (isPreviewPlaying) {
+      audio.pause();
+      setIsPreviewPlaying(false);
+    } else {
+      audio.play().then(() => setIsPreviewPlaying(true)).catch(() => {
+        showFeedback('error', 'Could not play audio. Check file format or URL.');
+        setIsPreviewPlaying(false);
+      });
     }
   };
 
@@ -1527,29 +1591,129 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onBackToGuestView }) => 
               />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs uppercase tracking-widest text-[#D7B46A] mb-1 font-medium">
-                  Audio Soundtrack Title
-                </label>
-                <input
-                  type="text"
-                  value={invitationForm.audio_title || ''}
-                  onChange={(e) => setInvitationForm({ ...invitationForm, audio_title: e.target.value })}
-                  className="w-full px-4 py-2.5 rounded-xl bg-[#120A14] border border-[#D7B46A]/25 text-[#F5ECDD] text-sm focus:outline-none focus:border-[#D7B46A]"
-                />
+            {/* Atmospheric Wedding Soundtrack Module */}
+            <div className="p-5 rounded-2xl border border-[#D7B46A]/40 bg-gradient-to-r from-[#200A16] to-[#160710] shadow-lg space-y-4">
+              <div className="flex items-center justify-between border-b border-[#D7B46A]/20 pb-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-[#3D0B14] border border-[#D7B46A]/40 flex items-center justify-center text-[#F3E5AB]">
+                    <Music className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4 className="font-title text-base sm:text-lg text-[#F3E5AB]">
+                      Wedding Music & Atmospheric Soundtrack
+                    </h4>
+                    <p className="text-[11px] text-[#D7B46A]/80">
+                      Plays auspicious background music when guests open the royal invitation
+                    </p>
+                  </div>
+                </div>
+                <span className="px-3 py-0.5 rounded-full bg-[#3D0B14] border border-[#D7B46A]/50 text-[11px] text-[#F3E5AB]">
+                  Background Audio
+                </span>
               </div>
 
-              <div>
-                <label className="block text-xs uppercase tracking-widest text-[#D7B46A] mb-1 font-medium">
-                  Audio Audio Stream URL (.mp3)
-                </label>
-                <input
-                  type="text"
-                  value={invitationForm.audio_url || ''}
-                  onChange={(e) => setInvitationForm({ ...invitationForm, audio_url: e.target.value })}
-                  className="w-full px-4 py-2.5 rounded-xl bg-[#120A14] border border-[#D7B46A]/25 text-[#F5ECDD] text-sm focus:outline-none focus:border-[#D7B46A]"
+              {/* Live Audio Preview Card */}
+              <div className="p-4 rounded-xl bg-[#120A14] border border-[#D7B46A]/30 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <audio
+                  ref={audioPreviewRef}
+                  src={invitationForm.audio_url || '/audio/shehnai_vivah.mp3'}
+                  preload="none"
+                  onPlay={() => setIsPreviewPlaying(true)}
+                  onPause={() => setIsPreviewPlaying(false)}
+                  onEnded={() => setIsPreviewPlaying(false)}
                 />
+                
+                <div className="flex items-center gap-3 w-full sm:w-auto">
+                  <button
+                    type="button"
+                    onClick={togglePreviewAudio}
+                    className="w-12 h-12 rounded-full bg-gradient-to-r from-[#FACC15] via-[#EAB308] to-[#CA8A04] text-[#451A03] flex items-center justify-center shadow-md hover:scale-105 transition-transform cursor-pointer shrink-0"
+                    title={isPreviewPlaying ? 'Pause Audio Preview' : 'Play Audio Preview'}
+                  >
+                    {isPreviewPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5 ml-0.5" />}
+                  </button>
+
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <Disc className={`w-3.5 h-3.5 text-[#D7B46A] ${isPreviewPlaying ? 'animate-spin' : ''}`} />
+                      <span className="text-xs font-bold text-[#F5ECDD] truncate">
+                        {invitationForm.audio_title || 'Shehnai & Sitar — Auspicious Vivah Dhun'}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-[#D7B46A]/70 truncate mt-0.5">
+                      {isPreviewPlaying ? '▶ Playing Audio Preview...' : 'Click to test playback'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                  {/* Upload Audio File Button */}
+                  <label className="cursor-pointer px-4 py-2 rounded-xl bg-gradient-to-r from-[#D7B46A] to-[#B89648] text-[#1D060A] text-xs font-bold hover:brightness-110 transition-all flex items-center gap-2 shadow-sm">
+                    {isUploadingAudio ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Uploading Audio...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="w-4 h-4" />
+                        <span>Upload Audio File (.mp3, .wav)</span>
+                      </>
+                    )}
+                    <input
+                      type="file"
+                      accept="audio/mp3,audio/wav,audio/ogg,audio/m4a,audio/*"
+                      className="hidden"
+                      disabled={isUploadingAudio}
+                      onChange={handleAudioFileUpload}
+                    />
+                  </label>
+                </div>
+              </div>
+
+              {/* Track Title and Direct URL inputs */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs uppercase tracking-widest text-[#D7B46A] mb-1 font-medium">
+                    Soundtrack Display Title
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Shehnai & Sitar — Auspicious Vivah Dhun"
+                    value={invitationForm.audio_title || ''}
+                    onChange={(e) => setInvitationForm({ ...invitationForm, audio_title: e.target.value })}
+                    className="w-full px-4 py-2.5 rounded-xl bg-[#120A14] border border-[#D7B46A]/25 text-[#F5ECDD] text-xs focus:outline-none focus:border-[#D7B46A]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs uppercase tracking-widest text-[#D7B46A] mb-1 font-medium">
+                    Audio Stream URL (.mp3 or local path)
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="e.g. /audio/shehnai_vivah.mp3 or https://..."
+                      value={invitationForm.audio_url || ''}
+                      onChange={(e) => setInvitationForm({ ...invitationForm, audio_url: e.target.value })}
+                      className="flex-1 px-4 py-2.5 rounded-xl bg-[#120A14] border border-[#D7B46A]/25 text-[#F5ECDD] text-xs focus:outline-none focus:border-[#D7B46A]"
+                    />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setInvitationForm({
+                          ...invitationForm,
+                          audio_url: '/audio/shehnai_vivah.mp3',
+                          audio_title: 'Shehnai & Sitar — Auspicious Vivah Dhun',
+                        })
+                      }
+                      className="px-3 py-2 rounded-xl bg-[#3D0B14] text-[#F3E5AB] text-xs hover:bg-[#52101B] border border-[#D7B46A]/30 transition-all cursor-pointer whitespace-nowrap"
+                      title="Reset to default auspicious Vivah Shehnai"
+                    >
+                      Default
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
 
