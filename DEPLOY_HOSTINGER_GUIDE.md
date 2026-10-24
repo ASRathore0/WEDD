@@ -133,7 +133,7 @@ The automated deployment pipeline in [`.github/workflows/deploy.yml`](.github/wo
 | `HOSTINGER_SSH_PORT` | `65002` |
 | `HOSTINGER_SSH_USER` | `u604295259` |
 | `HOSTINGER_SSH_PASSWORD` | *(Your Hostinger SSH / Account Password)* |
-| `HOSTINGER_REMOTE_PATH` | `public_html` *(or `/home/u604295259/public_html`)* |
+| `HOSTINGER_REMOTE_PATH` | `domains/aqua-ant-730619.hostingersite.com/public_html` *(or `/home/u604295259/domains/aqua-ant-730619.hostingersite.com/public_html`)* |
 
 ### How It Deploys:
 1. Every `git push origin main` triggers the GitHub Actions runner.
