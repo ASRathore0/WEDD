@@ -88,12 +88,15 @@ jobs:
               cp .env.production.hostinger .env
             fi
 
-            # Ensure storage and bootstrap/cache permissions
-            chmod -R 775 storage bootstrap/cache 2>/dev/null || true
+            # Ensure storage directories and permissions
+            mkdir -p storage/app/public/hero storage/app/public/gallery bootstrap/cache
             chmod -R 777 storage bootstrap/cache 2>/dev/null || true
 
-            # Optimize and link storage
-            php artisan storage:link 2>/dev/null || true
+            # Create native Linux symlink for storage (bypasses PHP exec limitation on shared hosting)
+            rm -rf public/storage
+            ln -sf $(pwd)/storage/app/public $(pwd)/public/storage
+
+            # Optimize application
             php artisan migrate --force 2>/dev/null || true
             php artisan config:clear 2>/dev/null || true
             php artisan route:clear 2>/dev/null || true
