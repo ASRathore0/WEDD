@@ -1,0 +1,74 @@
+name: Deploy to Hostinger
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: production_deploy
+  cancel-in-progress: false
+
+jobs:
+  build-and-deploy:
+    name: Build & Deploy to Hostinger
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: ⬇️ Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: 'frontend/package-lock.json'
+
+      - name: 📦 Build Frontend (Vite + React)
+        run: |
+          cd frontend
+          npm ci || npm install
+          npm run build
+
+      - name: ⚙️ Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, xml, ctype, iconv, intl, pdo_mysql, bcmath, fileinfo
+          coverage: none
+
+      - name: 📦 Install Backend Dependencies (Composer)
+        run: |
+          cd backend
+          composer install --no-dev --prefer-dist --optimize-autoloader --no-interaction
+
+      - name: 🏗️ Package Unified Deployment Files
+        run: |
+          # Copy compiled frontend into backend/public
+          mkdir -p backend/public
+          cp -rf frontend/dist/* backend/public/
+
+          # Prepare clean deployment staging payload
+          mkdir -p deploy_payload
+          cp -rf backend/* deploy_payload/
+          cp -f backend/.htaccess deploy_payload/.htaccess 2>/dev/null || true
+
+      - name: 🚀 Deploy to Hostinger via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.HOSTINGER_FTP_SERVER || '82.25.107.63' }}
+          username: ${{ secrets.HOSTINGER_FTP_USERNAME || 'u604295259' }}
+          password: ${{ secrets.HOSTINGER_FTP_PASSWORD }}
+          port: 21
+          server-dir: public_html/
+          local-dir: deploy_payload/
+          dangerous-clean-slate: false
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/.env
+            **/tests/**
+            **/phpunit.xml
+            **/*.sql
