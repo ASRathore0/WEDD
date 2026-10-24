@@ -8,6 +8,17 @@ $kernel->bootstrap();
 use App\Models\Invitation;
 use App\Models\WeddingEvent;
 use App\Models\VenueTravel;
+use App\Models\User;
+use Illuminate\Support\Facades\Hash;
+
+// Create or update Administrator
+User::updateOrCreate(
+    ['email' => 'admin@weddinguniverse.luxury'],
+    [
+        'name' => 'Royal Custodian',
+        'password' => Hash::make('universe2026'),
+    ]
+);
 
 $inv = Invitation::first();
 if (!$inv) {
