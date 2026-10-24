@@ -44,7 +44,7 @@ jobs:
           cd backend
           composer install --no-dev --prefer-dist --optimize-autoloader --no-interaction
 
-      - name: 🏗️ Package Unified Deployment Files
+      - name: 🏗️ Package Unified Deployment Payload
         run: |
           # Copy compiled frontend into backend/public
           mkdir -p backend/public
@@ -54,21 +54,42 @@ jobs:
           mkdir -p deploy_payload
           cp -rf backend/* deploy_payload/
           cp -f backend/.htaccess deploy_payload/.htaccess 2>/dev/null || true
+          cp -f backend/.env.production.hostinger deploy_payload/.env.production.hostinger 2>/dev/null || true
 
-      - name: 🚀 Deploy to Hostinger via FTP
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+          # Create high-speed deployment archive
+          tar -czf release.tar.gz -C deploy_payload .
+
+      - name: 🚀 Upload Release Archive to Hostinger (SCP)
+        uses: appleboy/scp-action@v0.1.7
         with:
-          server: ${{ secrets.HOSTINGER_FTP_SERVER || '82.25.107.63' }}
-          username: ${{ secrets.HOSTINGER_FTP_USERNAME || 'u604295259' }}
-          password: ${{ secrets.HOSTINGER_FTP_PASSWORD }}
-          port: 21
-          server-dir: public_html/
-          local-dir: deploy_payload/
-          dangerous-clean-slate: false
-          exclude: |
-            **/.git*
-            **/.git*/**
-            **/.env
-            **/tests/**
-            **/phpunit.xml
-            **/*.sql
+          host: ${{ secrets.HOSTINGER_SSH_HOST }}
+          port: ${{ secrets.HOSTINGER_SSH_PORT }}
+          username: ${{ secrets.HOSTINGER_SSH_USER }}
+          password: ${{ secrets.HOSTINGER_SSH_PASSWORD }}
+          source: "release.tar.gz"
+          target: ${{ secrets.HOSTINGER_REMOTE_PATH }}
+
+      - name: ⚡ Extract Release & Optimize on Hostinger (SSH)
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HOSTINGER_SSH_HOST }}
+          port: ${{ secrets.HOSTINGER_SSH_PORT }}
+          username: ${{ secrets.HOSTINGER_SSH_USER }}
+          password: ${{ secrets.HOSTINGER_SSH_PASSWORD }}
+          script: |
+            cd ${{ secrets.HOSTINGER_REMOTE_PATH }}
+
+            # Extract release archive without overwriting live .env or uploaded media
+            tar -xzf release.tar.gz --exclude='.env' --overwrite
+            rm -f release.tar.gz
+
+            # If .env does not exist on server, copy the prepared hostinger template
+            if [ ! -f .env ] && [ -f .env.production.hostinger ]; then
+              cp .env.production.hostinger .env
+            fi
+
+            # Optimize and link storage
+            php artisan storage:link 2>/dev/null || true
+            php artisan config:clear 2>/dev/null || true
+            php artisan route:clear 2>/dev/null || true
+            php artisan view:clear 2>/dev/null || true

@@ -124,41 +124,23 @@ Once your site is live at `https://yourdomain.com`:
 
 ## ⚡ Continuous Deployment: Auto-Deploy on `git push` via GitHub Actions
 
-A complete automated deployment pipeline is now configured in [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml).
+The automated deployment pipeline in [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) has been configured to use your exact GitHub Secrets:
 
-Every time you push to the `main` branch on GitHub:
-1. GitHub Actions automatically installs dependencies and compiles the React Vite frontend (`npm run build`).
-2. Installs PHP Composer dependencies for production (`composer install --no-dev --optimize-autoloader`).
-3. Copies the compiled frontend into Laravel's `public/` directory.
-4. Securely transfers the updated code to Hostinger via FTPS/FTP.
-5. Preserves your live `.env` and uploaded guest images (`storage/`).
+### Your GitHub Repository Secrets:
+| Secret Name | Value to Set |
+|---|---|
+| `HOSTINGER_SSH_HOST` | `82.25.107.63` |
+| `HOSTINGER_SSH_PORT` | `65002` |
+| `HOSTINGER_SSH_USER` | `u604295259` |
+| `HOSTINGER_SSH_PASSWORD` | *(Your Hostinger SSH / Account Password)* |
+| `HOSTINGER_REMOTE_PATH` | `public_html` *(or `/home/u604295259/public_html`)* |
 
-### How to Activate GitHub Auto-Deployment in 3 Minutes:
+### How It Deploys:
+1. Every `git push origin main` triggers the GitHub Actions runner.
+2. Compiles the React Vite frontend into `backend/public/`.
+3. Installs optimized PHP production dependencies (`composer install --no-dev`).
+4. Creates a release archive `release.tar.gz`.
+5. Uploads it over SCP using port `65002` directly to your `HOSTINGER_REMOTE_PATH`.
+6. Connects over SSH to extract the archive without overwriting your live `.env` or uploaded photos.
+7. Executes `php artisan storage:link` and clears caches so updates show instantly on `https://aqua-ant-730619.hostingersite.com`.
 
-#### 1. Retrieve your Hostinger FTP Credentials
-1. In Hostinger hPanel, go to **Files** ➔ **FTP Accounts**.
-2. Note your details:
-   - **FTP Host / IP**: (e.g. `ftp.yourdomain.com` or `185.xxx.xxx.xxx`)
-   - **FTP Username**: (e.g. `u123456789`)
-   - **FTP Password**: (Your Hostinger FTP password)
-   - **FTP Port**: `21`
-
-#### 2. Add Secrets to your GitHub Repository
-1. Open your GitHub Repository: [https://github.com/ASRathore0/WEDD](https://github.com/ASRathore0/WEDD).
-2. Go to **Settings** ➔ **Secrets and variables** ➔ **Actions**.
-3. Under **Repository secrets**, click **New repository secret** and add these three:
-   - `HOSTINGER_FTP_SERVER` ➔ Your Hostinger FTP Host (e.g. `ftp.yourdomain.com` or Hostinger IP)
-   - `HOSTINGER_FTP_USERNAME` ➔ Your Hostinger FTP Username
-   - `HOSTINGER_FTP_PASSWORD` ➔ Your Hostinger FTP Password
-4. Click **Add secret** for each.
-
-#### 3. Test Auto-Deployment
-Run this in your terminal or simply make any code change and push:
-```bash
-git add .
-git commit -m "Configure GitHub Auto-Deploy to Hostinger"
-git push origin main
-```
-Go to the **Actions** tab in your GitHub repository:
-- You will see the **Deploy to Hostinger** workflow run automatically.
-- Once the green checkmark appears (~1-2 minutes), your live Hostinger website is updated!
