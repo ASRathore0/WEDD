@@ -177,12 +177,9 @@ export const WeddingEventsSection: React.FC<WeddingEventsSectionProps> = ({ even
                 <div className="flex items-start gap-2.5 text-[#713F12]">
                   <MapPin className="w-4 h-4 text-[#EA580C] shrink-0 mt-0.5" />
                   <div className="min-w-0">
-                    <div className="font-bold text-[#713F12]">{event.venue_name}</div>
-                    {event.venue_address && (
-                      <div className="text-[11px] text-[#854D0E]/80 break-words font-medium">
-                        {event.venue_address}
-                      </div>
-                    )}
+                    <div className="font-bold text-[#713F12] leading-snug">
+                      {event.venue_name || event.venue_address}
+                    </div>
                   </div>
                 </div>
 

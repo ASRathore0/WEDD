@@ -449,7 +449,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onBackToGuestView }) => 
     if (!editingEvent) return;
 
     try {
-      await weddingApi.saveAdminEvent(editingEvent);
+      const payload = {
+        ...editingEvent,
+        venue_address: null, // Clear old lingering address to prevent double addresses
+      };
+      await weddingApi.saveAdminEvent(payload);
 
       // If this event was a wedding/vivah ceremony, keep main wedding_date in sync
       if (
@@ -2631,11 +2635,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onBackToGuestView }) => 
 
                   <div>
                     <label className="block text-xs uppercase tracking-wider text-[#D7B46A] mb-1">
-                      Venue Name
+                      Venue & Address (स्थान एवं पता)
                     </label>
                     <input
                       type="text"
                       required
+                      placeholder="e.g. Jigna Jagranath, Gopalganj Bihar or Shiv Bajrang Hotel, Thawe"
                       value={editingEvent.venue_name || ''}
                       onChange={(e) => setEditingEvent({ ...editingEvent, venue_name: e.target.value })}
                       className="w-full px-3 py-2 rounded-xl bg-[#120A14] border border-[#D7B46A]/30 text-sm text-[#F5ECDD]"
